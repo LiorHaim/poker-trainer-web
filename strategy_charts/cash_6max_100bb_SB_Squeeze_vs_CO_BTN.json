@@ -1,0 +1,65 @@
+{
+  "metadata": {
+    "chart_id": "cash_6max_100bb_SB_Squeeze_vs_CO_BTN",
+    "description": "6-Max Cash Game, 100bb deep. CO opens to 3BB, BTN calls. Hero is in SB deciding to squeeze (to 14BB) or fold.",
+    "game_type": "cash",
+    "table_size": 6,
+    "stack_depth": 100,
+    "hero_position": "SB",
+    "situation": "squeeze",
+    "opener_position": "CO",
+    "caller_position": "BTN",
+    "explanations": {
+      "RAISE": "SQUEEZE! There's dead money from the cold call. Squeeze big (14BB+) with premiums and blockers.",
+      "CALL": "Calling from SB with a cold-caller behind is marginal. Only with strong implied odds hands.",
+      "FOLD": "Fold hands that don't work as squeezes or have enough implied odds to flat."
+    }
+  },
+  "actions": {
+    "RAISE": [
+      "AA", "KK", "QQ", "JJ", "TT",
+      "AKs", "AQs", "AJs", "A5s", "A4s",
+      "KQs", "KJs",
+      "QJs",
+      "AKo", "AQo"
+    ],
+    "CALL": [
+      "99", "88", "77",
+      "ATs",
+      "KTs",
+      "QTs",
+      "JTs",
+      "T9s",
+      "98s",
+      "87s",
+      "76s"
+    ],
+    "FOLD": [
+      "66", "55", "44", "33", "22",
+      "A9s", "A8s", "A7s", "A6s", "A3s", "A2s",
+      "K9s", "K8s", "K7s", "K6s", "K5s", "K4s", "K3s", "K2s",
+      "Q9s", "Q8s", "Q7s", "Q6s", "Q5s", "Q4s", "Q3s", "Q2s",
+      "J9s", "J8s", "J7s", "J6s", "J5s", "J4s", "J3s", "J2s",
+      "T8s", "T7s", "T6s", "T5s", "T4s", "T3s", "T2s",
+      "97s", "96s", "95s", "94s", "93s", "92s",
+      "86s", "85s", "84s", "83s", "82s",
+      "75s", "74s", "73s", "72s",
+      "65s", "64s", "63s", "62s",
+      "54s", "53s", "52s",
+      "43s", "42s",
+      "32s",
+      "AJo", "ATo", "A9o", "A8o", "A7o", "A6o", "A5o", "A4o", "A3o", "A2o",
+      "KQo", "KJo", "KTo", "K9o", "K8o", "K7o", "K6o", "K5o", "K4o", "K3o", "K2o",
+      "QJo", "QTo", "Q9o", "Q8o", "Q7o", "Q6o", "Q5o", "Q4o", "Q3o", "Q2o",
+      "JTo", "J9o", "J8o", "J7o", "J6o", "J5o", "J4o", "J3o", "J2o",
+      "T9o", "T8o", "T7o", "T6o", "T5o", "T4o", "T3o", "T2o",
+      "98o", "97o", "96o", "95o", "94o", "93o", "92o",
+      "87o", "86o", "85o", "84o", "83o", "82o",
+      "76o", "75o", "74o", "73o", "72o",
+      "65o", "64o", "63o", "62o",
+      "54o", "53o", "52o",
+      "43o", "42o",
+      "32o"
+    ]
+  }
+}

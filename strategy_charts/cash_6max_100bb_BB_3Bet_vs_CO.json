@@ -1,0 +1,70 @@
+{
+  "metadata": {
+    "chart_id": "cash_6max_100bb_BB_3Bet_vs_CO",
+    "description": "6-Max Cash Game, 100bb deep. CO opens to 3BB. Hero is in BB deciding whether to 3-bet (to 10BB).",
+    "game_type": "cash",
+    "table_size": 6,
+    "stack_depth": 100,
+    "hero_position": "BB",
+    "situation": "3Bet",
+    "villain_position": "CO",
+    "explanations": {
+      "RAISE": "3-bet for value and bluffs. CO opens wide so we can 3-bet an aggressive range.",
+      "CALL": "Call with playable hands. We're getting good odds to defend our blind.",
+      "FOLD": "Fold only the worst hands that can't profitably continue."
+    }
+  },
+  "actions": {
+    "RAISE": [
+      "AA", "KK", "QQ", "JJ", "TT",
+      "AKs", "AQs", "AJs", "A5s", "A4s",
+      "KQs", "KJs",
+      "QJs",
+      "AKo", "AQo"
+    ],
+    "CALL": [
+      "99", "88", "77", "66", "55", "44", "33", "22",
+      "ATs", "A9s", "A8s", "A7s", "A6s", "A3s", "A2s",
+      "KTs", "K9s", "K8s", "K7s",
+      "QTs", "Q9s",
+      "JTs", "J9s",
+      "T9s", "T8s",
+      "98s", "97s",
+      "87s", "86s",
+      "76s", "75s",
+      "65s", "64s",
+      "54s", "53s",
+      "43s",
+      "AJo", "ATo", "A9o",
+      "KQo", "KJo", "KTo",
+      "QJo", "QTo",
+      "JTo", "J9o",
+      "T9o"
+    ],
+    "FOLD": [
+      "K6s", "K5s", "K4s", "K3s", "K2s",
+      "Q8s", "Q7s", "Q6s", "Q5s", "Q4s", "Q3s", "Q2s",
+      "J8s", "J7s", "J6s", "J5s", "J4s", "J3s", "J2s",
+      "T7s", "T6s", "T5s", "T4s", "T3s", "T2s",
+      "96s", "95s", "94s", "93s", "92s",
+      "85s", "84s", "83s", "82s",
+      "74s", "73s", "72s",
+      "63s", "62s",
+      "52s",
+      "42s",
+      "32s",
+      "A8o", "A7o", "A6o", "A5o", "A4o", "A3o", "A2o",
+      "K9o", "K8o", "K7o", "K6o", "K5o", "K4o", "K3o", "K2o",
+      "Q9o", "Q8o", "Q7o", "Q6o", "Q5o", "Q4o", "Q3o", "Q2o",
+      "J8o", "J7o", "J6o", "J5o", "J4o", "J3o", "J2o",
+      "T8o", "T7o", "T6o", "T5o", "T4o", "T3o", "T2o",
+      "98o", "97o", "96o", "95o", "94o", "93o", "92o",
+      "87o", "86o", "85o", "84o", "83o", "82o",
+      "76o", "75o", "74o", "73o", "72o",
+      "65o", "64o", "63o", "62o",
+      "54o", "53o", "52o",
+      "43o", "42o",
+      "32o"
+    ]
+  }
+}

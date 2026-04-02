@@ -1,0 +1,14 @@
+venv/
+.git/
+.continue/
+.claude/
+tests/
+__pycache__/
+*.pyc
+*.pyo
+.env
+.dockerignore
+Makefile
+openshift.yaml
+README.md
+*.md

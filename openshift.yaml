@@ -1,0 +1,168 @@
+apiVersion: v1
+kind: List
+items:
+# --- Secret for sensitive config ---
+- apiVersion: v1
+  kind: Secret
+  metadata:
+    name: poker-trainer-secrets
+  type: Opaque
+  stringData:
+    secret-key: "CHANGE-ME-TO-A-RANDOM-64-CHAR-STRING"
+
+# --- MongoDB PVC ---
+- apiVersion: v1
+  kind: PersistentVolumeClaim
+  metadata:
+    name: mongo-pvc
+  spec:
+    accessModes:
+    - ReadWriteOnce
+    resources:
+      requests:
+        storage: 1Gi
+
+# --- MongoDB ---
+- apiVersion: v1
+  kind: Service
+  metadata:
+    name: mongodb
+  spec:
+    ports:
+    - port: 27017
+      targetPort: 27017
+    selector:
+      app: mongodb
+
+- apiVersion: apps/v1
+  kind: Deployment
+  metadata:
+    name: mongodb
+  spec:
+    selector:
+      matchLabels:
+        app: mongodb
+    template:
+      metadata:
+        labels:
+          app: mongodb
+      spec:
+        containers:
+        - name: mongodb
+          image: docker.io/library/mongo:5.0
+          ports:
+          - containerPort: 27017
+          resources:
+            requests:
+              memory: "256Mi"
+              cpu: "100m"
+            limits:
+              memory: "512Mi"
+              cpu: "500m"
+          volumeMounts:
+          - name: mongo-storage
+            mountPath: /data/db
+        volumes:
+        - name: mongo-storage
+          persistentVolumeClaim:
+            claimName: mongo-pvc
+
+# --- Poker App ---
+- apiVersion: image.openshift.io/v1
+  kind: ImageStream
+  metadata:
+    name: poker-trainer
+
+- apiVersion: build.openshift.io/v1
+  kind: BuildConfig
+  metadata:
+    name: poker-trainer
+  spec:
+    source:
+      type: Binary
+    strategy:
+      type: Docker
+    output:
+      to:
+        kind: ImageStreamTag
+        name: "poker-trainer:latest"
+
+- apiVersion: apps/v1
+  kind: Deployment
+  metadata:
+    name: poker-trainer
+    labels:
+      app: poker-trainer
+    annotations:
+      image.openshift.io/triggers: '[{"from":{"kind":"ImageStreamTag","name":"poker-trainer:latest"},"fieldPath":"spec.template.spec.containers[?(@.name==\"poker-trainer\")].image"}]'
+  spec:
+    replicas: 1
+    selector:
+      matchLabels:
+        app: poker-trainer
+    template:
+      metadata:
+        labels:
+          app: poker-trainer
+      spec:
+        containers:
+        - name: poker-trainer
+          image: "poker-trainer:latest"
+          ports:
+          - containerPort: 8080
+          env:
+          - name: MONGO_URI
+            value: "mongodb://mongodb:27017/poker"
+          - name: FLASK_ENV
+            value: "production"
+          - name: SECRET_KEY
+            valueFrom:
+              secretKeyRef:
+                name: poker-trainer-secrets
+                key: secret-key
+          resources:
+            requests:
+              memory: "128Mi"
+              cpu: "100m"
+            limits:
+              memory: "256Mi"
+              cpu: "500m"
+          livenessProbe:
+            httpGet:
+              path: /api/health
+              port: 8080
+            initialDelaySeconds: 15
+            periodSeconds: 30
+            timeoutSeconds: 5
+          readinessProbe:
+            httpGet:
+              path: /api/health
+              port: 8080
+            initialDelaySeconds: 5
+            periodSeconds: 10
+            timeoutSeconds: 3
+
+- apiVersion: v1
+  kind: Service
+  metadata:
+    name: poker-trainer-web
+  spec:
+    ports:
+    - port: 8080
+      targetPort: 8080
+    selector:
+      app: poker-trainer
+
+- apiVersion: route.openshift.io/v1
+  kind: Route
+  metadata:
+    name: poker-trainer
+  spec:
+    to:
+      kind: Service
+      name: poker-trainer-web
+    port:
+      targetPort: 8080
+    tls:
+      termination: edge
+      insecureEdgeTerminationPolicy: Redirect

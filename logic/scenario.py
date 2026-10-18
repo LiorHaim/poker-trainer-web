@@ -43,6 +43,25 @@ def get_random_hand() -> Hand:
     card1, card2 = random.sample(FULL_DECK, 2)
     return Hand(card1, card2)
 
+def random_hand_of(notation: str) -> Hand:
+    """
+    Deal a concrete hand of a given class: "AKs" -> Ah Kh, A<>K of one suit.
+
+    Dealing from a restricted range means choosing the class first and then a
+    combination of it, rather than drawing two cards from the deck.
+    """
+    high, low = notation[0], notation[1]
+    suffix = notation[2:]
+    if high == low:
+        suit1, suit2 = random.sample(SUITS, 2)
+    elif suffix == "s":
+        suit1 = suit2 = random.choice(SUITS)
+    elif suffix == "o":
+        suit1, suit2 = random.sample(SUITS, 2)
+    else:
+        raise ValueError(f"{notation!r} is not canonical hand notation")
+    return Hand(Card(high, suit1), Card(low, suit2))
+
 class Position(Enum):
     UTG = "UTG"; MP = "MP"; CO = "CO"; BTN = "BTN"; SB = "SB"; BB = "BB"
     def __str__(self): return self.value

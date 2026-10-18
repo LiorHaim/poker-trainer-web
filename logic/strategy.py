@@ -26,6 +26,7 @@ from .chart_schema import (
 from .chart_schema import (
     warnings as warning_issues,
 )
+from .sampling import ReachabilitySampler
 from .scenario import Action, Hand
 
 logger = logging.getLogger(__name__)
@@ -50,6 +51,8 @@ class StrategyManager:
         self.charts_directory = Path(charts_directory)
         self.charts: dict[str, Any] = {}
         self.chart_metadata: dict[str, Any] = {}
+        #: Deals hero a hand that can actually reach each node. Built by load_charts.
+        self.sampler = ReachabilitySampler({})
         if strict is None:
             strict = os.environ.get("CHART_VALIDATION", "").lower() == "strict"
         self.strict = strict
@@ -85,6 +88,8 @@ class StrategyManager:
         for chart_key, chart_data in documents.items():
             self.chart_metadata[chart_key] = chart_data.get("metadata", {})
             self.charts[chart_key] = self._compile_chart(chart_data)
+
+        self.sampler = ReachabilitySampler(documents)
 
         logger.info(
             "Loaded %d charts (%d errors, %d warnings, %d known issues)",

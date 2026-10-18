@@ -394,6 +394,29 @@ worth rewriting against the real `app.py` path when it goes).
 Still open from Part 1: §1.6 (missing nodes — hero 4-betting, vs-squeeze, limps, other stack depths) and
 §1.7 (binary scoring), which are phases 3 and 4.
 
+### Phase 2 — done
+
+Hands are dealt from the range that can reach each node, not from the deck (§1.4).
+
+- `logic/sampling.py` resolves hero's prior range per node and deals from it, weighted by combinations so
+  the mix of pairs, suited and offsuit hands matches a real deal. `chart_schema.prior_range_keys` is the
+  single definition, shared with the validator, so the trainer and the validator cannot disagree about what
+  hero can be holding.
+- The chain is followed precisely: hero reaches `vs_3Bet` by opening, `vs_4Bet` by 3-betting, and `vs_5Bet`
+  by opening *and then* 4-betting. Using the 4-betting range rather than the opening range for `vs_5Bet`
+  surfaced a real inconsistency — `UTG_vs_MP_5Bet` called QQ while `UTG_vs_MP_3Bet` never 4-bet it, on a
+  1.2% 4-betting range that was far too narrow regardless.
+- Two charts were missing from the tree entirely (`MP_vs_CO_3Bet`, `SB_vs_BB_3Bet`), which the new
+  `imprecise-prior-range` warning exposed. Both added, 45 charts total; adding `SB_vs_BB_3Bet` in turn
+  surfaced that `SB_vs_BB_5Bet` continued with JJ and AQs that no chart 4-bet.
+
+Across the 19 nodes hero reaches by raising, the share of drills that pose a real decision rather than an
+automatic fold goes from **7% to 47%**. Every deal is now a spot that can actually occur; at
+`BTN_vs_MP_4Bet`, where 95% of deals were impossible, it is 100%.
+
+Still open from Part 1: §1.6 (other stack depths, limps, vs-squeeze, 9-max, MTT) and §1.7 (binary
+scoring), which is phase 3.
+
 ### Appendix — audit scripts
 
 The throwaway scripts used to produce the tables in Part 1 are now superseded by

@@ -1,0 +1,71 @@
+{
+  "metadata": {
+    "chart_id": "cash_6max_100bb_MP_vs_CO_3Bet",
+    "description": "6-Max Cash, 100bb. Hero opens MP to 2.5bb, CO 3-bets to 8bb. 4-bet to 17.6bb, call, or fold.",
+    "game_type": "cash",
+    "table_size": 6,
+    "stack_depth": 100,
+    "hero_position": "MP",
+    "situation": "vs_3Bet",
+    "villain_position": "CO",
+    "sizings": {
+      "open_bb": 2.5,
+      "3bet_bb": 8.0,
+      "4bet_bb": 17.6
+    },
+    "source": {
+      "type": "authored",
+      "detail": "Hand-authored from standard 6-max 100bb preflop theory. NOT solver output - these are reasonable reference ranges, not an equilibrium. Replace with solver exports when available.",
+      "date": "2026-10-18",
+      "spec": {
+        "RAISE": "QQ+, AKs, AKo, A5s-A4s",
+        "DEFEND": "QQ+, AKs, AKo, A5s-A4s, JJ-88, AQs, AJs, KQs, AQo"
+      }
+    },
+    "explanations": {
+      "RAISE": "4-bet the hands that want stacks in against a CO 3-betting range, plus the suited wheel aces as bluffs - they block AA and AK and still flop a draw when called.",
+      "CALL": "Hands too strong to fold but not strong enough to play a 4-bet pot out of position. We keep the pot small and let CO's bluffs keep betting.",
+      "FOLD": "Most of the opening range. Out of position against a 3-bet, a hand needs real equity to continue, and the bottom of an MP open does not have it."
+    }
+  },
+  "actions": {
+    "RAISE": [
+      "AA", "KK", "QQ",
+      "AKs", "A5s", "A4s",
+      "AKo"
+    ],
+    "CALL": [
+      "JJ", "TT", "99", "88",
+      "AQs", "AJs",
+      "KQs",
+      "AQo"
+    ],
+    "FOLD": [
+      "77", "66", "55", "44", "33", "22",
+      "ATs", "A9s", "A8s", "A7s", "A6s", "A3s", "A2s",
+      "KJs", "KTs", "K9s", "K8s", "K7s", "K6s", "K5s", "K4s", "K3s", "K2s",
+      "QJs", "QTs", "Q9s", "Q8s", "Q7s", "Q6s", "Q5s", "Q4s", "Q3s", "Q2s",
+      "JTs", "J9s", "J8s", "J7s", "J6s", "J5s", "J4s", "J3s", "J2s",
+      "T9s", "T8s", "T7s", "T6s", "T5s", "T4s", "T3s", "T2s",
+      "98s", "97s", "96s", "95s", "94s", "93s", "92s",
+      "87s", "86s", "85s", "84s", "83s", "82s",
+      "76s", "75s", "74s", "73s", "72s",
+      "65s", "64s", "63s", "62s",
+      "54s", "53s", "52s",
+      "43s", "42s",
+      "32s",
+      "AJo", "ATo", "A9o", "A8o", "A7o", "A6o", "A5o", "A4o", "A3o", "A2o",
+      "KQo", "KJo", "KTo", "K9o", "K8o", "K7o", "K6o", "K5o", "K4o", "K3o", "K2o",
+      "QJo", "QTo", "Q9o", "Q8o", "Q7o", "Q6o", "Q5o", "Q4o", "Q3o", "Q2o",
+      "JTo", "J9o", "J8o", "J7o", "J6o", "J5o", "J4o", "J3o", "J2o",
+      "T9o", "T8o", "T7o", "T6o", "T5o", "T4o", "T3o", "T2o",
+      "98o", "97o", "96o", "95o", "94o", "93o", "92o",
+      "87o", "86o", "85o", "84o", "83o", "82o",
+      "76o", "75o", "74o", "73o", "72o",
+      "65o", "64o", "63o", "62o",
+      "54o", "53o", "52o",
+      "43o", "42o",
+      "32o"
+    ]
+  }
+}

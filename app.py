@@ -8,7 +8,8 @@ from collections import defaultdict
 
 from flask import Flask, jsonify, request, send_from_directory, session
 
-from logic.scenario import Action, Position, PreflopAction, TrainingResult, TrainingScenario, get_random_hand
+from logic.nodes import build_scenario
+from logic.scenario import Action, TrainingResult, get_random_hand
 from logic.statistics_db import StatisticsManagerDB
 from logic.strategy import StrategyManager
 
@@ -113,51 +114,13 @@ def generate_scenario(available_scenarios):
     if not available_scenarios:
         return None
     scenario_meta = random.choice(available_scenarios)
-    hand = get_random_hand()
-    chart_key = scenario_meta["chart_key"]
-    situation = scenario_meta.get("situation", "RFI")
-    actions_before_hero = []
-    hero_open_size = 0.0
-    hero_3bet_size = 0.0
-
     try:
-        if situation == "vs_RFI":
-            villain_pos = Position(scenario_meta["villain_position"])
-            actions_before_hero = [PreflopAction(position=villain_pos, action=Action.RAISE, size_bb=3.0)]
-        elif situation == "vs_3Bet":
-            villain_pos = Position(scenario_meta["villain_position"])
-            hero_open_size = 3.0
-            actions_before_hero = [PreflopAction(position=villain_pos, action=Action.RAISE, size_bb=9.0)]
-        elif situation == "vs_4Bet":
-            villain_pos = Position(scenario_meta["villain_position"])
-            hero_open_size = 3.0
-            hero_3bet_size = 9.0
-            actions_before_hero = [PreflopAction(position=villain_pos, action=Action.RAISE, size_bb=25.0)]
-        elif situation == "squeeze":
-            opener_pos = Position(scenario_meta["opener_position"])
-            caller_pos = Position(scenario_meta["caller_position"])
-            actions_before_hero = [
-                PreflopAction(position=opener_pos, action=Action.RAISE, size_bb=3.0),
-                PreflopAction(position=caller_pos, action=Action.CALL, size_bb=3.0)
-            ]
-        elif situation == "3Bet":
-            villain_pos = Position(scenario_meta["villain_position"])
-            actions_before_hero = [PreflopAction(position=villain_pos, action=Action.RAISE, size_bb=3.0)]
-    except (KeyError, ValueError):
-        situation = "RFI"
-        actions_before_hero = []
-
-    return TrainingScenario(
-        table_size=int(scenario_meta["table_size"]),
-        effective_stack_bb=int(scenario_meta["stack_depth"]),
-        hero_position=Position(scenario_meta["hero_position"]),
-        hero_hand=hand,
-        actions_before_hero=actions_before_hero,
-        chart_key=chart_key,
-        situation=situation,
-        hero_open_size_bb=hero_open_size,
-        hero_3bet_size_bb=hero_3bet_size
-    )
+        return build_scenario(scenario_meta, get_random_hand(), scenario_meta["chart_key"])
+    except (KeyError, ValueError) as e:
+        # Reaching here means a chart passed validation but has no node
+        # definition, which is a bug rather than a user-visible condition.
+        logger.error("Cannot build a scenario from %s: %s", scenario_meta.get("chart_key"), e)
+        return None
 
 
 def evaluate_action(scenario, user_action):
@@ -203,7 +166,11 @@ def serialize_scenario(sc):
         "actions": [{"pos": a.position.value, "act": a.action.value, "amt": a.size_bb} for a in sc.actions_before_hero],
         "card1": {"rank": sc.hero_hand.card1.rank, "suit": sc.hero_hand.card1.suit},
         "card2": {"rank": sc.hero_hand.card2.rank, "suit": sc.hero_hand.card2.suit},
-        "to_call": sc.to_call_bb
+        "to_call": sc.to_call_bb,
+        # Labels come from the node definition so the UI does not keep its own
+        # copy of what each situation means.
+        "raise_label": sc.raise_label,
+        "action_text": sc.action_text,
     }
 
 
@@ -240,7 +207,14 @@ def get_music_list():
 def list_charts():
     charts = []
     for key, meta in strategy_mgr.chart_metadata.items():
-        charts.append({"key": key, "description": meta.get("description", key)})
+        charts.append({
+            "key": key,
+            "description": meta.get("description", key),
+            # The UI groups by situation; it used to infer this from the chart
+            # key with substring matching, which broke whenever a key changed.
+            "situation": meta.get("situation", "RFI"),
+            "hero_position": meta.get("hero_position"),
+        })
     charts.sort(key=lambda x: x['key'])
     return jsonify(charts)
 

@@ -8,6 +8,11 @@
     "hero_position": "BTN",
     "situation": "vs_3Bet",
     "villain_position": "BB",
+    "sizings": {
+      "open_bb": 2.5,
+      "3bet_bb": 11.0,
+      "4bet_bb": 24.2
+    },
     "explanations": {
       "RAISE": "4-bet for value and as bluffs. BB 3-bets very wide vs BTN, so we can 4-bet aggressively with blockers.",
       "CALL": "Call with hands that play well in position. We have the positional advantage postflop.",

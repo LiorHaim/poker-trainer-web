@@ -8,6 +8,11 @@
     "hero_position": "UTG",
     "situation": "vs_3Bet",
     "villain_position": "BTN",
+    "sizings": {
+      "open_bb": 2.5,
+      "3bet_bb": 8.0,
+      "4bet_bb": 17.6
+    },
     "explanations": {
       "RAISE": "4-bet for value. BTN 3-bets the widest range, so we can 4-bet a few more value hands.",
       "CALL": "Call with strong hands. BTN will have position postflop, so we need hands with good equity.",

@@ -1,31 +1,38 @@
 {
   "metadata": {
-    "chart_id": "cash_6max_100bb_SB_3Bet_vs_CO",
-    "description": "6-Max Cash Game, 100bb deep. CO opens to 3BB. Hero is in SB deciding whether to 3-bet (to 10BB) or fold.",
+    "chart_id": "cash_6max_100bb_MP_vs_CO_5Bet",
+    "description": "6-Max Cash Game, 100bb deep. Hero opens from MP to 3BB, 3-bets to 9BB vs a caller/raiser, and now faces a 4-bet to 25BB.",
     "game_type": "cash",
     "table_size": 6,
     "stack_depth": 100,
-    "hero_position": "SB",
-    "situation": "3Bet",
+    "hero_position": "MP",
+    "situation": "vs_5Bet",
     "villain_position": "CO",
+    "sizings": {
+      "open_bb": 2.5,
+      "3bet_bb": 8.0,
+      "4bet_bb": 17.6,
+      "5bet_bb": 100.0
+    },
     "explanations": {
-      "RAISE": "3-bet wider against CO's loose open. Include value hands and blocker-based bluffs.",
-      "FOLD": "Fold hands that don't have enough equity or blockers to profitably 3-bet."
+      "RAISE": "5-bet all-in with the absolute premiums. We're happy to get stacks in preflop.",
+      "CALL": "Call with hands that have strong equity but aren't quite 5-bet shoves (QQ, AKs).",
+      "FOLD": "Our 3-bet was a bluff or light value. Fold and preserve our stack."
     }
   },
   "actions": {
     "RAISE": [
-      "AA", "KK", "QQ", "JJ", "TT", "99",
-      "AKs", "AQs", "AJs", "ATs", "A5s", "A4s",
-      "KQs", "KJs",
-      "QJs",
-      "AKo", "AQo", "AJo"
+      "AA", "KK"
+    ],
+    "CALL": [
+      "QQ",
+      "AKs", "AKo"
     ],
     "FOLD": [
-      "88", "77", "66", "55", "44", "33", "22",
-      "A9s", "A8s", "A7s", "A6s", "A3s", "A2s",
-      "KTs", "K9s", "K8s", "K7s", "K6s", "K5s", "K4s", "K3s", "K2s",
-      "QTs", "Q9s", "Q8s", "Q7s", "Q6s", "Q5s", "Q4s", "Q3s", "Q2s",
+      "JJ", "TT", "99", "88", "77", "66", "55", "44", "33", "22",
+      "AQs", "AJs", "ATs", "A9s", "A8s", "A7s", "A6s", "A5s", "A4s", "A3s", "A2s",
+      "KQs", "KJs", "KTs", "K9s", "K8s", "K7s", "K6s", "K5s", "K4s", "K3s", "K2s",
+      "QJs", "QTs", "Q9s", "Q8s", "Q7s", "Q6s", "Q5s", "Q4s", "Q3s", "Q2s",
       "JTs", "J9s", "J8s", "J7s", "J6s", "J5s", "J4s", "J3s", "J2s",
       "T9s", "T8s", "T7s", "T6s", "T5s", "T4s", "T3s", "T2s",
       "98s", "97s", "96s", "95s", "94s", "93s", "92s",
@@ -35,7 +42,7 @@
       "54s", "53s", "52s",
       "43s", "42s",
       "32s",
-      "ATo", "A9o", "A8o", "A7o", "A6o", "A5o", "A4o", "A3o", "A2o",
+      "AQo", "AJo", "ATo", "A9o", "A8o", "A7o", "A6o", "A5o", "A4o", "A3o", "A2o",
       "KQo", "KJo", "KTo", "K9o", "K8o", "K7o", "K6o", "K5o", "K4o", "K3o", "K2o",
       "QJo", "QTo", "Q9o", "Q8o", "Q7o", "Q6o", "Q5o", "Q4o", "Q3o", "Q2o",
       "JTo", "J9o", "J8o", "J7o", "J6o", "J5o", "J4o", "J3o", "J2o",

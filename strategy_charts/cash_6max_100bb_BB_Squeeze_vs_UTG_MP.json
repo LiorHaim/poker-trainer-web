@@ -9,6 +9,10 @@
     "situation": "squeeze",
     "opener_position": "UTG",
     "caller_position": "MP",
+    "sizings": {
+      "open_bb": 2.5,
+      "3bet_bb": 12.0
+    },
     "explanations": {
       "RAISE": "Squeeze very tight. Both UTG and MP have strong ranges. Only squeeze with premiums.",
       "CALL": "Call with hands that have good implied odds. The dead money helps, but ranges are strong.",

@@ -8,6 +8,11 @@
     "hero_position": "UTG",
     "situation": "vs_3Bet",
     "villain_position": "CO",
+    "sizings": {
+      "open_bb": 2.5,
+      "3bet_bb": 8.0,
+      "4bet_bb": 17.6
+    },
     "explanations": {
       "RAISE": "4-bet for value. CO 3-bets wider than MP, but UTG still needs a strong range to continue.",
       "CALL": "Call with strong hands that play well postflop. Our positional disadvantage is mitigated by range advantage.",

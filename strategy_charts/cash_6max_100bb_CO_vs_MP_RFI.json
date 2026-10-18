@@ -8,6 +8,10 @@
     "hero_position": "CO",
     "situation": "vs_RFI",
     "villain_position": "MP",
+    "sizings": {
+      "open_bb": 2.5,
+      "3bet_bb": 8.0
+    },
     "explanations": {
       "RAISE": "3-bet for value with premiums. MP opens wider than UTG, so we can 3-bet slightly wider.",
       "CALL": "Call with hands that play well in position - pocket pairs, suited connectors, suited broadways.",

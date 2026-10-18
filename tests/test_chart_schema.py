@@ -10,7 +10,6 @@ import pytest
 from logic.chart_schema import (
     ALL_HANDS,
     ERROR,
-    WARNING,
     ChartIssue,
     apply_baseline,
     decision_node_id,
@@ -128,7 +127,7 @@ def test_detects_bad_position():
 
 
 def test_detects_bad_situation():
-    chart = good_chart(situation="vs_5Bet")
+    chart = good_chart(situation="vs_6Bet")
     assert "bad-situation" in codes(validate_chart("cash_6max_100bb_BTN_RFI", chart), ERROR)
 
 
@@ -137,10 +136,14 @@ def test_detects_non_integer_stack_depth():
     assert "bad-metadata-type" in codes(validate_chart("cash_6max_100bb_BTN_RFI", chart), ERROR)
 
 
-def test_warns_on_missing_sizings():
+def test_rejects_missing_sizings():
+    """
+    Without sizings the engine falls back to defaults, and the pot odds shown
+    do not match the sizes the ranges were built for.
+    """
     chart = good_chart()
     del chart["metadata"]["sizings"]
-    assert "missing-sizings" in codes(validate_chart("cash_6max_100bb_BTN_RFI", chart), WARNING)
+    assert "missing-sizings" in codes(validate_chart("cash_6max_100bb_BTN_RFI", chart), ERROR)
 
 
 def test_rejects_negative_sizing():
@@ -154,17 +157,18 @@ def test_rejects_non_object_chart():
 
 # --- Cross-chart checks -----------------------------------------------------
 
-def test_vs_rfi_and_3bet_are_the_same_node():
-    """The two families the repo ships for nine spots must collide, or the check is useless."""
-    facing = decision_node_id(
-        {"game_type": "cash", "table_size": 6, "stack_depth": 100,
-         "hero_position": "BB", "situation": "vs_RFI", "villain_position": "BTN"}
+def test_three_bet_is_no_longer_a_separate_situation():
+    """
+    `3Bet` described the same decision as `vs_RFI` and shipped as a second chart
+    per spot with conflicting answers. Phase 1 removed it; a chart that still
+    uses it must be rejected rather than quietly loaded.
+    """
+    from logic.chart_schema import SITUATIONS
+
+    assert "3Bet" not in SITUATIONS
+    assert "bad-situation" in codes(
+        validate_chart("cash_6max_100bb_BTN_RFI", good_chart(situation="3Bet")), ERROR
     )
-    three_bet = decision_node_id(
-        {"game_type": "cash", "table_size": 6, "stack_depth": 100,
-         "hero_position": "BB", "situation": "3Bet", "villain_position": "BTN"}
-    )
-    assert facing == three_bet
 
 
 def test_different_villains_are_different_nodes():
@@ -178,7 +182,7 @@ def test_different_villains_are_different_nodes():
 def test_detects_duplicate_node():
     charts = {
         "a": good_chart(chart_id="a", situation="vs_RFI", villain_position="CO"),
-        "b": good_chart(chart_id="b", situation="3Bet", villain_position="CO"),
+        "b": good_chart(chart_id="b", situation="vs_RFI", villain_position="CO"),
     }
     assert "duplicate-node" in codes(validate_chart_set(charts), ERROR)
 

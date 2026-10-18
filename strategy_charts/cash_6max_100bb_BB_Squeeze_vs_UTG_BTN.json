@@ -9,6 +9,10 @@
     "situation": "squeeze",
     "opener_position": "UTG",
     "caller_position": "BTN",
+    "sizings": {
+      "open_bb": 2.5,
+      "3bet_bb": 12.0
+    },
     "explanations": {
       "RAISE": "Squeeze selectively. UTG has a strong range but BTN's call is often capped. Squeeze value hands and blockers.",
       "CALL": "Call with good implied odds hands. BTN being in position makes postflop tougher but there's dead money.",

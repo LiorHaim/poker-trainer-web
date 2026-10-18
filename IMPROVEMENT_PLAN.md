@@ -20,27 +20,34 @@ visual polish, deployment automation. The ceiling is limited by three things, in
 
 ### 1.1 Measured range errors
 
-Opening frequencies, measured across all 169 combos:
+> **Correction.** The figures below were first written as percentages of the 169
+> hand *classes*, but range sizes are quoted combo-weighted — a share of the 1326
+> hands you can be dealt. Offsuit hands are 12 combos and suited only 4, so the
+> two differ by several points. The table is combo-weighted; it changes the
+> verdict for UTG, MP and SB.
+
+Opening frequencies, combo-weighted:
 
 | Position | Chart | Reference (100bb 6-max) | Status |
 |---|---|---|---|
-| UTG | 16.0% | 15–18% | ok |
-| MP  | 22.5% | 20–23% | ok |
-| CO  | **40.2%** | 26–30% | **way too wide** |
-| BTN | **34.3%** | 45–50% | **way too tight** |
-| SB  | 53.8% raise-only | ~40% raise (+limp) or ~44% pure-raise | too wide, and no limp branch |
+| UTG | 11.2% | 15–18% | too tight |
+| MP  | 16.0% | 20–23% | too tight |
+| CO  | **33.3%** | 26–30% | **too wide** |
+| BTN | **27.9%** | 45–50% | **far too tight** |
+| SB  | 46.3% raise-only | ~40–45% pure-raise | about right, but no limp branch |
 
 CO opens *wider than BTN* — the positional ordering is inverted at the two most important seats.
 `cash_6max_100bb_BTN_RFI.json`'s own explanation text says *"we play a very wide and aggressive range (~45–50%)"*
 while the chart it ships is 34.3%. The coaching text and the data disagree.
 
-BB defense is systematically too tight — getting 3.5:1 closing the action, BB should defend ~55–60% vs a BTN open:
+BB defense is systematically too tight — closing the action against a 2.5bb open, BB should defend far wider:
 
-| Node | Chart defend% | Reference |
+| Node | Chart defend% (combo) | Reference |
 |---|---|---|
-| BB vs BTN | 40.8% | 55–60% |
-| BB vs CO  | 33.7% | ~45% |
-| BB vs UTG | 24.3% | ~33% |
+| BB vs BTN | 34.2% | 55–60% |
+| BB vs CO  | 26.4% | ~45% |
+| BB vs MP  | 20.1% | ~38% |
+| BB vs UTG | 16.1% | ~33% |
 
 ### 1.2 Two charts give contradictory answers for the same decision node
 
@@ -78,10 +85,10 @@ that only a subset of hands reach:
 
 | Node | Hands that actually reach it | Fraction of random deals that are impossible |
 |---|---|---|
-| `UTG_vs_BTN_3Bet` | 27/169 (UTG's opening range) | **84%** |
-| `UTG_vs_4Bet` | 27/169 | 84% |
-| `MP_vs_4Bet` | 38/169 | 78% |
-| `CO_vs_BB_3Bet` | 68/169 | 60% |
+| `UTG_vs_BTN_3Bet` | UTG's opening range | **~89%** |
+| `UTG_vs_4Bet` | same | ~89% |
+| `MP_vs_4Bet` | MP's opening range | ~84% |
+| `CO_vs_BB_3Bet` | CO's opening range | ~67% |
 
 So the trainer regularly presents "you opened UTG and BTN 3-bet you — you hold 72o." That node cannot exist. It is
 also a free +100 bankroll, because the answer is always FOLD. `vs_4Bet` charts are 97% FOLD; drilling them as
@@ -354,6 +361,38 @@ Deliberately *not* done in Phase 0, to keep the data changes separate from the t
 collapsing the duplicate node families, retuning CO/BTN/SB opens and blind defense, the `vs_4Bet` semantics
 fix, and deleting `logic/trainer.py` (`tests/test_integration.py` currently only exercises that dead module —
 worth rewriting against the real `app.py` path when it goes).
+
+### Phase 1 — done
+
+**Chart data (§1.1–1.5).**
+
+- The `3Bet` situation is gone. `vs_RFI` covers facing an open, raise branch included; the nine duplicate
+  `*_3Bet_vs_*` charts are deleted and the schema rejects the situation outright. 52 charts → 43.
+- All 14 opening and blind-defense charts regenerated from range specs in `chart_sources/` via
+  `scripts/author_chart.py`, with the spec recorded in `metadata.source`. Every frequency is now inside the
+  reference bands and monotonic by position; `CHART_KNOWN_ISSUES.json` is empty and every `xfail` is gone.
+- Five `vs_4Bet` charts were actually describing a 5-bet spot — position order makes the other reading
+  impossible, and their own explanations said "5-bet all-in". Split into a new `vs_5Bet` situation and
+  renamed; `BTN_vs_MP_4Bet` is the one genuine `vs_4Bet` node.
+- `metadata.sizings` is required on every chart, and `metadata.source` records provenance. The authored
+  ranges are marked `"type": "authored"` — reasonable reference ranges, not solver output.
+
+**Engine (§1.5, §3.1, §3.2).**
+
+- `logic/nodes.py` is the single definition of what a situation means: who acted, for how much, what is in
+  the pot, what hero must call. This replaces an if/elif chain duplicated across `app.py`, `trainer.py` and
+  a JavaScript function, plus the hardcoded pot table in `TrainingScenario` that disagreed with all of them.
+  The dead-code comments in `scenario.py` ("This is getting complex. Let's hardcode") are gone with it.
+- Pot and to-call are computed from each chart's declared sizings, so a chart built for a 2.5bb open is
+  drilled at 2.5bb. Blinds posted by hero or the villain are no longer double-counted.
+- The raise button's label and the action description come from the server, so the UI no longer keeps its
+  own copy of what each situation means. `/api/charts` returns `situation`, replacing the substring matching
+  the study view used to guess it with.
+- `logic/trainer.py` deleted. `tests/test_integration.py` only ever exercised that dead module; it now
+  drives `app.py` through a Flask test client, with the database faked.
+
+Still open from Part 1: §1.6 (missing nodes — hero 4-betting, vs-squeeze, limps, other stack depths) and
+§1.7 (binary scoring), which are phases 3 and 4.
 
 ### Appendix — audit scripts
 

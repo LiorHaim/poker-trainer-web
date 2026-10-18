@@ -1,17 +1,23 @@
 {
   "metadata": {
-    "chart_id": "cash_6max_100bb_BTN_vs_SB_4Bet",
-    "description": "6-Max Cash Game, 100bb deep. Hero opens from BTN to 2.5BB, SB 3-bets to 10BB, Hero 4-bets to 22BB. SB 5-bets all-in.",
+    "chart_id": "cash_6max_100bb_UTG_vs_MP_5Bet",
+    "description": "6-Max Cash Game, 100bb deep. Hero opens from UTG to 3BB, gets 3-bet, 4-bets to 25BB. Villain 5-bets all-in or to 60BB.",
     "game_type": "cash",
     "table_size": 6,
     "stack_depth": 100,
-    "hero_position": "BTN",
-    "situation": "vs_4Bet",
-    "villain_position": "SB",
+    "hero_position": "UTG",
+    "situation": "vs_5Bet",
+    "villain_position": "MP",
+    "sizings": {
+      "open_bb": 2.5,
+      "3bet_bb": 8.0,
+      "4bet_bb": 17.6,
+      "5bet_bb": 100.0
+    },
     "explanations": {
-      "RAISE": "Call the 5-bet shove with the nuts. We're happy to get it in with premiums.",
-      "CALL": "Call the shove with hands that have good equity against a polarized 5-bet range.",
-      "FOLD": "Our 4-bet included bluffs. When SB 5-bets, fold all non-premium hands."
+      "RAISE": "5-bet all-in with the absolute nuts. AA and KK are always getting stacks in from UTG.",
+      "CALL": "Only call with hands too strong to fold but not quite good enough to 5-bet for value.",
+      "FOLD": "Our 3-bet/4-bet was a bluff or thin value. We cannot continue vs a 5-bet. Save our stack."
     }
   },
   "actions": {
@@ -19,11 +25,11 @@
       "AA", "KK"
     ],
     "CALL": [
-      "QQ", "JJ",
-      "AKs", "AKo"
+      "QQ",
+      "AKs"
     ],
     "FOLD": [
-      "TT", "99", "88", "77", "66", "55", "44", "33", "22",
+      "JJ", "TT", "99", "88", "77", "66", "55", "44", "33", "22",
       "AQs", "AJs", "ATs", "A9s", "A8s", "A7s", "A6s", "A5s", "A4s", "A3s", "A2s",
       "KQs", "KJs", "KTs", "K9s", "K8s", "K7s", "K6s", "K5s", "K4s", "K3s", "K2s",
       "QJs", "QTs", "Q9s", "Q8s", "Q7s", "Q6s", "Q5s", "Q4s", "Q3s", "Q2s",
@@ -36,7 +42,7 @@
       "54s", "53s", "52s",
       "43s", "42s",
       "32s",
-      "AQo", "AJo", "ATo", "A9o", "A8o", "A7o", "A6o", "A5o", "A4o", "A3o", "A2o",
+      "AKo", "AQo", "AJo", "ATo", "A9o", "A8o", "A7o", "A6o", "A5o", "A4o", "A3o", "A2o",
       "KQo", "KJo", "KTo", "K9o", "K8o", "K7o", "K6o", "K5o", "K4o", "K3o", "K2o",
       "QJo", "QTo", "Q9o", "Q8o", "Q7o", "Q6o", "Q5o", "Q4o", "Q3o", "Q2o",
       "JTo", "J9o", "J8o", "J7o", "J6o", "J5o", "J4o", "J3o", "J2o",

@@ -1,13 +1,19 @@
 {
   "metadata": {
-    "chart_id": "cash_6max_100bb_SB_vs_BB_4Bet",
+    "chart_id": "cash_6max_100bb_SB_vs_BB_5Bet",
     "description": "6-Max Cash Game, 100bb deep. Hero opens from SB to 3BB, BB 3-bets to 10BB, Hero 4-bets to 22BB. BB 5-bets all-in. BvB war!",
     "game_type": "cash",
     "table_size": 6,
     "stack_depth": 100,
     "hero_position": "SB",
-    "situation": "vs_4Bet",
+    "situation": "vs_5Bet",
     "villain_position": "BB",
+    "sizings": {
+      "open_bb": 2.5,
+      "3bet_bb": 11.0,
+      "4bet_bb": 24.2,
+      "5bet_bb": 100.0
+    },
     "explanations": {
       "RAISE": "Call the 5-bet shove. BvB pots can get wild, but we need the nuts to call an all-in.",
       "CALL": "Call the shove with hands that have good equity in BvB spots.",

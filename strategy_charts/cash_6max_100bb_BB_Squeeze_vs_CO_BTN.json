@@ -9,6 +9,10 @@
     "situation": "squeeze",
     "opener_position": "CO",
     "caller_position": "BTN",
+    "sizings": {
+      "open_bb": 2.5,
+      "3bet_bb": 12.0
+    },
     "explanations": {
       "RAISE": "SQUEEZE! CO is wide, BTN is capped (weak). We attack them both with a large squeeze (12BB) using value hands and strong blockers.",
       "CALL": "We have great odds to close the action. We call with pairs, suited connectors, and broadways.",

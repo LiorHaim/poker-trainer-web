@@ -8,6 +8,11 @@
     "hero_position": "BTN",
     "situation": "vs_3Bet",
     "villain_position": "SB",
+    "sizings": {
+      "open_bb": 2.5,
+      "3bet_bb": 11.0,
+      "4bet_bb": 24.2
+    },
     "explanations": {
       "RAISE": "4-Bet for value and as a bluff. We can 4-bet slightly wider here given positional advantage and wide ranges.",
       "CALL": "Call wider in position. We want to play pots in position against the SB's wide 3-bet range.",

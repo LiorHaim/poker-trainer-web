@@ -64,6 +64,11 @@ class PreflopAction:
 class TrainingScenario:
     """
     A complete, self-contained preflop scenario for the user to solve.
+
+    The money in play is computed once by `logic.nodes.build_scenario` from the
+    chart's declared sizings, and carried here as plain numbers. It used to be
+    derived by properties on this class from a table of hardcoded pot sizes,
+    which disagreed with the sizes the charts were actually built for.
     """
     table_size: int = 6
     effective_stack_bb: int = 100
@@ -71,83 +76,19 @@ class TrainingScenario:
     hero_hand: Hand = field(default_factory=get_random_hand)
     actions_before_hero: list[PreflopAction] = field(default_factory=list)
     chart_key: str = ""
+    situation: str = "RFI"
 
-    situation: str = "RFI" # e.g., "RFI", "vs_RFI", "vs_3Bet", "vs_4Bet"
-    hero_open_size_bb: float = 0.0 # Hero's *own* open size in a vs_3Bet spot
-    hero_3bet_size_bb: float = 0.0 # Hero's *own* 3-bet size in a vs_4Bet spot
+    #: What hero already has in the pot: a posted blind, or an earlier raise.
+    hero_invested_bb: float = 0.0
+    #: Total pot before hero acts, and what hero must add to continue.
+    pot_bb: float = 1.5
+    to_call_bb: float = 0.0
 
-    @property
-    def pot_bb(self) -> float:
-        """Calculates the current pot size in BBs."""
-        pot = 1.5 # Blinds
+    #: What the raise button does here, and the one-line description of the
+    #: action so far. Generated server-side so the UI has a single source.
+    raise_label: str = "Raise"
+    action_text: str = ""
 
-        # Add hero's own open/3bet
-        if self.situation == "vs_3Bet":
-            pot += self.hero_open_size_bb
-        elif self.situation == "vs_4Bet":
-            # Pot includes Hero's 3-bet AND Villain's open (which hero 3-bet)
-            # A bit complex, so we'll approximate based on the 4-bet
-            # 1.5 (blinds) + 3.0 (Villain open) + 9.0 (Hero 3-bet) + 25.0 (Villain 4-bet)
-            # Let's just calculate from the actions
-            # Standard 4-bet pot: Blinds(1.5) + V-Open(3) + H-3Bet(9) + V-4Bet(25) = 38.5
-            # This is complex. Let's simplify and just add hero's last bet.
-            pot += self.hero_3bet_size_bb
-
-        # Add all villain actions
-        for act in self.actions_before_hero:
-            if act.action == Action.RAISE:
-                pot += act.size_bb # Add the 3-bet or 4-bet amount
-            elif act.action == Action.CALL:
-                pot += act.size_bb
-
-        # This logic is getting complex. Let's hardcode for simplicity
-        # based on standard sizings.
-
-        if self.situation == "RFI": return 1.5
-        if self.situation == "vs_RFI": return 4.5 # 1.5 blinds + 3.0 raise
-        if self.situation == "3Bet": return 4.5 # 1.5 blinds + 3.0 villain open (we're deciding to 3-bet)
-        if self.situation == "vs_3Bet": return 13.5 # 1.5 blinds + 3.0 open + 9.0 3bet
-        if self.situation == "vs_4Bet": return 38.5 # 1.5 blinds + 3.0 open + 9.0 3bet + 25.0 4bet
-        if self.situation == "squeeze": return 7.5 # 1.5 blinds + 3.0 open + 3.0 call
-
-        return 1.5 # Default
-
-    @property
-    def to_call_bb(self) -> float:
-        """Calculates the amount the hero needs to call in BBs."""
-        if not self.actions_before_hero:
-            if self.hero_position == Position.SB: return 0.5
-            if self.hero_position == Position.BB: return 1.0
-            return 0.0 # RFI
-
-        last_raise_size = self.actions_before_hero[-1].size_bb
-
-        if self.situation == "vs_4Bet":
-            # Call amount is 4-bet size MINUS our 3-bet
-            return last_raise_size - self.hero_3bet_size_bb
-
-        if self.situation == "vs_3Bet":
-            # Call amount is 3-bet size MINUS our open
-            return last_raise_size - self.hero_open_size_bb
-
-        if self.situation == "vs_RFI":
-            if self.hero_position == Position.SB: return last_raise_size - 0.5
-            if self.hero_position == Position.BB: return last_raise_size - 1.0
-            return last_raise_size # Calling an open
-
-        if self.situation == "3Bet":
-            # Hero is deciding to 3-bet, so "call" would be the villain's open
-            if self.hero_position == Position.SB: return last_raise_size - 0.5
-            if self.hero_position == Position.BB: return last_raise_size - 1.0
-            return last_raise_size
-
-        if self.situation == "squeeze":
-            # Hero faces an open and a call, needs to call the open amount
-            if self.hero_position == Position.SB: return last_raise_size - 0.5
-            if self.hero_position == Position.BB: return last_raise_size - 1.0
-            return last_raise_size
-
-        return 0.0 # Should not be hit
 
 # --- Training Result ---
 @dataclass

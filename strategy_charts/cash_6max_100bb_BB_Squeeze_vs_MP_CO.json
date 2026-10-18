@@ -9,6 +9,10 @@
     "situation": "squeeze",
     "opener_position": "MP",
     "caller_position": "CO",
+    "sizings": {
+      "open_bb": 2.5,
+      "3bet_bb": 12.0
+    },
     "explanations": {
       "RAISE": "Squeeze with premiums and good blockers. There's good dead money to pick up.",
       "CALL": "Call with hands that have good implied odds and playability.",

@@ -8,6 +8,11 @@
     "hero_position": "BTN",
     "situation": "vs_4Bet",
     "villain_position": "MP",
+    "sizings": {
+      "open_bb": 2.5,
+      "3bet_bb": 8.0,
+      "4bet_bb": 20.0
+    },
     "explanations": {
       "RAISE": "This is a 5-Bet All-In. We have the absolute nuts (AA, KK) and are happy to get 100BBs in preflop.",
       "CALL": "This is a 4-Bet call. Our hand (QQ, AKs) is too strong to fold but not strong enough to 5-bet (we'd fold out worse). We call in position.",

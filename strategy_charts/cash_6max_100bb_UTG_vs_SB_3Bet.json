@@ -8,6 +8,11 @@
     "hero_position": "UTG",
     "situation": "vs_3Bet",
     "villain_position": "SB",
+    "sizings": {
+      "open_bb": 2.5,
+      "3bet_bb": 11.0,
+      "4bet_bb": 24.2
+    },
     "explanations": {
       "RAISE": "4-bet for value. SB 3-bets a polarized range vs UTG (very strong or bluffs). 4-bet the nuts.",
       "CALL": "Call with hands that play well OOP. We have position over SB postflop and range advantage.",

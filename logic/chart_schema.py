@@ -36,7 +36,10 @@ RANKS = "AKQJT98765432"
 POSITIONS = ("UTG", "MP", "CO", "BTN", "SB", "BB")
 ACTIONS = ("FOLD", "CALL", "RAISE")
 GAME_TYPES = ("cash", "mtt")
-SITUATIONS = ("RFI", "vs_RFI", "3Bet", "vs_3Bet", "vs_4Bet", "squeeze")
+#: `vs_RFI` covers the whole "hero faces an open" decision, raise branch included.
+#: There used to be a separate `3Bet` situation describing the same node, which
+#: meant two charts per spot with conflicting answers; it was removed in phase 1.
+SITUATIONS = ("RFI", "vs_RFI", "vs_3Bet", "vs_4Bet", "vs_5Bet", "squeeze")
 
 #: Positions in order of action preflop. Used to sanity check who can face whom.
 POSITION_ORDER = {pos: i for i, pos in enumerate(POSITIONS)}
@@ -57,6 +60,24 @@ def _all_hands() -> frozenset[str]:
 #: The 169 canonical starting hands ("AA", "AKs", "AKo", ...).
 ALL_HANDS = _all_hands()
 
+#: Number of card combinations behind each hand class, and the total deck.
+#: Range frequencies are quoted combo-weighted by convention: a range is "22%"
+#: because it is 22% of the 1326 hands you can be dealt, not 22% of the 169
+#: classes. The two differ a lot - offsuit hands are 12 combos but suited only
+#: 4 - so a range that is 34% of classes can be 28% of combos.
+TOTAL_COMBOS = 1326
+
+
+def combo_count(hand: str) -> int:
+    if len(hand) == 2:
+        return 6  # pair
+    return 4 if hand.endswith("s") else 12
+
+
+def combo_frequency(hands: Iterable[str]) -> float:
+    """Share of all 1326 dealable hands, as a percentage."""
+    return 100.0 * sum(combo_count(hand) for hand in hands) / TOTAL_COMBOS
+
 #: Metadata keys every chart must define.
 REQUIRED_METADATA = (
     "chart_id",
@@ -73,14 +94,15 @@ REQUIRED_METADATA = (
 SITUATION_REQUIREMENTS: dict[str, tuple[str, ...]] = {
     "RFI": (),
     "vs_RFI": ("villain_position",),
-    "3Bet": ("villain_position",),
     "vs_3Bet": ("villain_position",),
     "vs_4Bet": ("villain_position",),
+    "vs_5Bet": ("villain_position",),
     "squeeze": ("opener_position", "caller_position"),
 }
 
-#: Optional `metadata.sizings` keys, in bb. Validated when present; will become
-#: required in phase 1, when the engine stops hardcoding 3.0bb for every open.
+#: `metadata.sizings` keys, in bb. The engine builds the spot from these, so a
+#: chart drilled at the wrong size shows the user pot odds that do not match the
+#: range being tested. Required since phase 1.
 SIZING_KEYS = ("open_bb", "3bet_bb", "4bet_bb", "5bet_bb", "call_bb")
 
 
@@ -209,10 +231,11 @@ def _validate_metadata(chart_key: str, meta: dict) -> list[ChartIssue]:
 
     sizings = meta.get("sizings")
     if sizings is None:
-        warn(
+        err(
             "missing-sizings",
-            "metadata.sizings is absent; the engine falls back to hardcoded sizes, "
-            "so the pot odds shown to the user may not match this chart",
+            "metadata.sizings is required; without it the engine falls back to "
+            "DEFAULT_SIZINGS and the pot odds shown to the user may not match "
+            "the sizes this chart's ranges were built for",
         )
     elif not isinstance(sizings, dict):
         err("bad-sizings", "metadata.sizings must be an object")
@@ -293,9 +316,9 @@ def decision_node_id(meta: dict) -> tuple | None:
     Identify the decision node a chart models, so two charts describing the same
     decision can be detected.
 
-    `vs_RFI` and `3Bet` are deliberately mapped to the same node: both are "hero
-    faces an open and chooses fold/call/raise". The repo currently ships both for
-    nine spots, with contradictory answers.
+    Kept as a distinct concept from `situation` so that if a second way of
+    describing the same decision is ever introduced again, it collides here
+    rather than shipping two charts for one spot.
     """
     situation = meta.get("situation")
     if situation not in SITUATIONS:
@@ -303,7 +326,7 @@ def decision_node_id(meta: dict) -> tuple | None:
 
     common = (meta.get("game_type"), meta.get("table_size"), meta.get("stack_depth"), meta.get("hero_position"))
 
-    if situation in ("vs_RFI", "3Bet"):
+    if situation == "vs_RFI":
         return (*common, "facing_open", meta.get("villain_position"))
     if situation == "squeeze":
         return (*common, "squeeze", meta.get("opener_position"), meta.get("caller_position"))
@@ -327,6 +350,10 @@ def raising_hands(chart: dict) -> set[str]:
     return {hand for hand in chart.get("actions", {}).get("RAISE", []) or [] if is_valid_hand(hand)}
 
 
+def _seat(meta: dict) -> tuple:
+    return (meta.get("game_type"), meta.get("table_size"), meta.get("stack_depth"), meta.get("hero_position"))
+
+
 def validate_chart_set(charts: dict[str, dict]) -> list[ChartIssue]:
     """
     Checks that only make sense across the whole set:
@@ -337,16 +364,21 @@ def validate_chart_set(charts: dict[str, dict]) -> list[ChartIssue]:
     """
     issues: list[ChartIssue] = []
     by_node: dict[tuple, list[str]] = {}
-    rfi_by_position: dict[tuple, tuple[str, set[str]]] = {}
+    #: (seat) -> (chart key, hands hero opens)
+    opened_by_seat: dict[tuple, tuple[str, set[str]]] = {}
+    #: (seat, villain) -> (chart key, hands hero 3-bets)
+    three_bet_by_seat: dict[tuple, tuple[str, set[str]]] = {}
 
     for key, data in charts.items():
         meta = data.get("metadata", {})
         node = decision_node_id(meta)
         if node is not None:
             by_node.setdefault(node, []).append(key)
+        seat = _seat(meta)
         if meta.get("situation") == "RFI":
-            seat = (meta.get("game_type"), meta.get("table_size"), meta.get("stack_depth"), meta.get("hero_position"))
-            rfi_by_position[seat] = (key, raising_hands(data))
+            opened_by_seat[seat] = (key, raising_hands(data))
+        elif meta.get("situation") == "vs_RFI":
+            three_bet_by_seat[(*seat, meta.get("villain_position"))] = (key, raising_hands(data))
 
     for _node, keys in sorted(by_node.items(), key=lambda kv: kv[1]):
         if len(keys) > 1:
@@ -364,24 +396,41 @@ def validate_chart_set(charts: dict[str, dict]) -> list[ChartIssue]:
 
     for key, data in sorted(charts.items()):
         meta = data.get("metadata", {})
-        if meta.get("situation") not in ("vs_3Bet", "vs_4Bet"):
+        situation = meta.get("situation")
+        seat = _seat(meta)
+
+        # How hero got to this node determines which range they must hold.
+        if situation in ("vs_3Bet", "vs_5Bet"):
+            # Hero opened the pot.
+            prior = opened_by_seat.get(seat)
+            description = f"{seat[3]} never opens"
+        elif situation == "vs_4Bet":
+            # Hero 3-bet over someone else's open.
+            prior = three_bet_by_seat.get((*seat, meta.get("villain_position")))
+            description = f"{seat[3]} never 3-bets vs {meta.get('villain_position')}"
+        else:
             continue
-        seat = (meta.get("game_type"), meta.get("table_size"), meta.get("stack_depth"), meta.get("hero_position"))
-        rfi = rfi_by_position.get(seat)
-        if rfi is None:
+
+        if prior is None:
             issues.append(
-                ChartIssue(key, "no-rfi-chart", WARNING, f"no RFI chart for {seat[3]}, cannot check reachability")
+                ChartIssue(
+                    key,
+                    "no-prior-range",
+                    WARNING,
+                    f"no chart defines how {seat[3]} reaches this node, cannot check reachability",
+                )
             )
             continue
-        rfi_key, opened = rfi
-        unreachable = continuing_hands(data) - opened
+
+        prior_key, prior_hands = prior
+        unreachable = continuing_hands(data) - prior_hands
         if unreachable:
             issues.append(
                 ChartIssue(
                     key,
                     "unreachable-continue",
                     ERROR,
-                    f"continues with {_sample(unreachable)}, which {rfi_key} never opens",
+                    f"continues with {_sample(unreachable)}, which {description} ({prior_key})",
                 )
             )
 

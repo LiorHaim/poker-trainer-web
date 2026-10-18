@@ -453,6 +453,37 @@ The honest subset that does not need them is mixed *frequencies* without EVs —
 chart plays two ways and accepting either answer, which removes the worst of the binary-scoring harm. That
 is worth doing if solver data stays out of reach.
 
+### Phase 5 — done (the drill loop)
+
+The parts of Part 4 that cost something on every hand.
+
+- **Zero-scroll loop (§4.1.1).** The feedback panel sat below the cards and the action buttons, roughly 150px
+  past the bottom of a 900px viewport, so answering a hand meant scrolling — every hand, all session. The
+  training view is now two columns from 1024px up: the spot on the left, the range and result pinned beside
+  it. Below that width the answer column is scrolled into view instead. Verified by driving eight hands
+  through the UI and asserting `window.scrollY === 0` and the panel fully within the viewport each time.
+- **Nothing moves when you answer.** The panel used to be rebuilt with `innerHTML` on every decision,
+  including a loading skeleton, which reflowed the page mid-drill. It is filled in place now.
+- **The range is always on screen (§4.4),** masked until you act, so it reads as reference rather than a
+  reveal — and the grid no longer appears from nowhere and shifts the layout.
+- **Hero sits at the bottom (§4.1.3).** Seats were pinned to absolute positions by name, so hero appeared
+  wherever their position happened to be. They now rotate: hero at six o'clock, everyone else clockwise in
+  order of action.
+- **Money is on the felt (§4.1.4).** Blinds, bets and the pot are drawn as chips at the seats. The spot was
+  previously legible only from a line of text in the HUD.
+- **Colour-blind-safe palette (§4.2).** The range matrix used red for fold and green for raise — the single
+  most important distinction in the app, in the one colour pair ~8% of men cannot separate. Now blue /
+  amber / slate, which also differ in lightness, and the action buttons use the same three colours so the
+  mapping is learnable.
+- **Artefacts gone (§4.1.5–6):** the empty toast rendering as a dark pill over the keyboard hints, the
+  dealer button overlapping the BTN seat, the stray blurred divider above the cards, and ~250px of dead
+  vertical space. The table's gloss overlay was also painting over the seats and clipping them.
+
+Not done: splitting the single 1301-line `index.html` into modules with a build step (§4.3). That is
+structural work with no user-visible benefit today, and adding a toolchain changes how the app is
+deployed — worth doing when the EV display of phase 3 needs real components. Browser tests are likewise
+run by hand rather than in CI, which would need a server and a browser in the pipeline.
+
 ### Appendix — audit scripts
 
 The throwaway scripts used to produce the tables in Part 1 are now superseded by

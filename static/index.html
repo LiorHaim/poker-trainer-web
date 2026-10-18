@@ -110,9 +110,6 @@
         @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
         .fade-in { animation: fadeIn 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards; }
 
-        @keyframes shimmer {
-            0% { background-position: -200% center; }
-            100% { background-position: 200% center; }
         }
         @keyframes float {
             0%, 100% { transform: translateY(0); }
@@ -149,16 +146,18 @@
             transform: none;
             filter: saturate(0.3);
         }
-        .btn-fold { background: linear-gradient(180deg, #ef4444 0%, #dc2626 100%); color: white; border-color: #991b1b; }
-        .btn-call { background: linear-gradient(180deg, #f59e0b 0%, #d97706 100%); color: white; border-color: #92400e; }
-        .btn-raise { background: linear-gradient(180deg, #10b981 0%, #059669 100%); color: white; border-color: #065f46; }
-        
-        .btn-fold:hover:not(:disabled) { background: linear-gradient(180deg, #f87171 0%, #ef4444 100%); box-shadow: 0 0 20px rgba(239,68,68,0.3); }
+        /* Same three colours as the range matrix, so the button you press and
+           the cell you are looking at mean the same thing. */
+        .btn-fold { background: linear-gradient(180deg, #64748b 0%, #475569 100%); color: white; border-color: #1e293b; }
+        .btn-call { background: linear-gradient(180deg, #f59e0b 0%, #d97706 100%); color: #1a1a2e; border-color: #92400e; }
+        .btn-raise { background: linear-gradient(180deg, #3b82f6 0%, #2563eb 100%); color: white; border-color: #1e40af; }
+
+        .btn-fold:hover:not(:disabled) { background: linear-gradient(180deg, #94a3b8 0%, #64748b 100%); box-shadow: 0 0 20px rgba(100,116,139,0.35); }
         .btn-call:hover:not(:disabled) { background: linear-gradient(180deg, #fbbf24 0%, #f59e0b 100%); box-shadow: 0 0 20px rgba(245,158,11,0.3); }
-        .btn-raise:hover:not(:disabled) { background: linear-gradient(180deg, #34d399 0%, #10b981 100%); box-shadow: 0 0 20px rgba(16,185,129,0.3); }
+        .btn-raise:hover:not(:disabled) { background: linear-gradient(180deg, #60a5fa 0%, #3b82f6 100%); box-shadow: 0 0 20px rgba(59,130,246,0.3); }
 
         /* --- Matrix --- */
-        .matrix { display: grid; grid-template-columns: repeat(13, 1fr); gap: 2px; max-width: 500px; margin: 0 auto; }
+        .matrix { display: grid; grid-template-columns: repeat(13, 1fr); gap: 2px; width: 100%; max-width: 420px; margin: 0 auto; }
         .cell { 
             aspect-ratio: 1; display: flex; align-items: center; justify-content: center; 
             font-size: 0.65rem; font-weight: 700; font-family: 'JetBrains Mono', monospace;
@@ -170,9 +169,21 @@
              .matrix { gap: 1px; }
         }
         .cell:hover { opacity: 1; z-index: 5; transform: scale(1.15); box-shadow: 0 0 8px rgba(0,0,0,0.5); border-radius: 4px; }
-        .act-RAISE { background: linear-gradient(135deg, #10b981, #059669); color: white; opacity: 1; }
-        .act-CALL { background: linear-gradient(135deg, #f59e0b, #d97706); color: white; opacity: 1; }
-        .act-FOLD { background: linear-gradient(135deg, #ef4444, #dc2626); color: white; opacity: 1; }
+        /* Blue / amber / slate instead of green / amber / red. Around 8% of men
+           cannot reliably separate red from green, which made the old palette
+           unreadable for them - and red-vs-green was carrying the single most
+           important distinction in the app. These three differ in lightness as
+           well as hue, so they survive being seen in greyscale. */
+        .act-RAISE { background: linear-gradient(135deg, #3b82f6, #2563eb); color: #fff; opacity: 1; }
+        .act-CALL  { background: linear-gradient(135deg, #f59e0b, #d97706); color: #1a1a2e; opacity: 1; }
+        .act-FOLD  { background: linear-gradient(135deg, #475569, #334155); color: #cbd5e1; opacity: 1; }
+        .legend-key { display: inline-flex; align-items: center; gap: 0.35rem; }
+        .swatch { width: 10px; height: 10px; border-radius: 2px; display: inline-block; }
+
+        /* The range is on screen the whole time, masked until the hand is
+           answered, so it reads as reference rather than a reveal. */
+        .matrix.is-masked .cell { color: transparent; background: #1b2232; opacity: 0.45; }
+        .matrix.is-masked .cell.hero { color: #93c5fd; }
         .cell.hero { 
             border: 2px solid #60a5fa; z-index: 10; transform: scale(1.35); 
             box-shadow: 0 0 15px rgba(59,130,246,0.6), 0 0 30px rgba(59,130,246,0.2); 
@@ -200,12 +211,12 @@
         /* --- Poker Table --- */
         .poker-table {
             position: relative;
-            width: clamp(240px, 70vw, 400px);
+            width: clamp(240px, 62vw, 420px);
             aspect-ratio: 2 / 1;
             background: radial-gradient(ellipse at center, #0a6e4e 0%, #064e3b 50%, #053a2c 100%);
             border: 10px solid #2a1810;
             border-radius: 100px;
-            margin: 1rem auto;
+            margin: 1.5rem auto 2rem;
             box-shadow: 
                 inset 0 0 30px rgba(0,0,0,0.5),
                 inset 0 0 60px rgba(0,0,0,0.2),
@@ -231,7 +242,10 @@
         }
         .seat {
             position: absolute;
-            width: 42px; height: 42px;
+            z-index: 2;
+            transform: translate(-50%, -50%);
+            flex-direction: column;
+            width: 44px; height: 44px;
             background: rgba(15, 20, 30, 0.9);
             border: 2px solid rgba(255,255,255,0.1);
             border-radius: 50%;
@@ -239,32 +253,70 @@
             font-size: 0.6rem; font-weight: 700; color: #6b7280;
             font-family: 'JetBrains Mono', monospace;
             box-shadow: 0 4px 8px rgba(0,0,0,0.4);
-            transition: all 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+            transition: background 0.3s ease, border-color 0.3s ease, color 0.3s ease, box-shadow 0.3s ease;
         }
-        /* 6-Max Positions */
-        .seat-BTN { bottom: 10%; right: -15px; }
-        .seat-SB  { bottom: -15px; right: 25%; }
-        .seat-BB  { bottom: -15px; left: 25%; }
-        .seat-UTG { bottom: 10%; left: -15px; }
-        .seat-MP  { top: 10%; left: -15px; }
-        .seat-CO  { top: 10%; right: -15px; }
+        /* Seats are placed by rotating slot rather than by position name, so
+           hero is always at the bottom and the others sit clockwise around
+           them in order of action - the layout every poker client uses. Slot 0
+           is hero; 1..5 follow clockwise from six o'clock. */
+        .seat[data-slot="0"] { left: 50%; top: 100%; }
+        .seat[data-slot="1"] { left: 6%;  top: 86%; }
+        .seat[data-slot="2"] { left: 0%;   top: 28%; }
+        .seat[data-slot="3"] { left: 50%; top: 0%; }
+        .seat[data-slot="4"] { left: 100%; top: 28%; }
+        .seat[data-slot="5"] { left: 94%; top: 86%; }
 
+        .seat-name { font-size: 0.58rem; line-height: 1; }
+        .seat-stack { font-size: 0.5rem; line-height: 1; color: #94a3b8; margin-top: 1px; }
+
+        /* Money on the felt: what each villain put in, and the pot. */
+        .seat-bet {
+            position: absolute;
+            white-space: nowrap;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.5rem; font-weight: 700;
+            color: #fde68a;
+            background: rgba(0,0,0,0.55);
+            border: 1px solid rgba(245,158,11,0.35);
+            border-radius: 999px;
+            padding: 1px 6px;
+        }
+        .table-pot {
+            position: absolute;
+            z-index: 1;
+            left: 50%; top: 50%;
+            transform: translate(-50%, -50%);
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.65rem; font-weight: 700;
+            color: #e2e8f0;
+            background: rgba(0,0,0,0.35);
+            border: 1px solid rgba(255,255,255,0.08);
+            border-radius: 999px;
+            padding: 2px 10px;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+        .table-pot.visible { opacity: 1; }
+
+        /* Hero is emerald and villains are amber. Blue is reserved for the
+           raise action now that the matrix uses it. */
         .seat.active-hero {
-            background: linear-gradient(135deg, #3b82f6, #2563eb);
-            border-color: #60a5fa;
+            background: linear-gradient(135deg, #10b981, #059669);
+            border-color: #6ee7b7;
             color: white;
-            box-shadow: 0 0 16px rgba(59,130,246,0.5), 0 0 4px rgba(59,130,246,0.8);
-            transform: scale(1.15);
+            box-shadow: 0 0 16px rgba(16,185,129,0.5);
         }
+        .seat.active-hero .seat-stack { color: #d1fae5; }
         .seat.active-villain {
-            background: linear-gradient(135deg, #ef4444, #dc2626);
-            border-color: #f87171;
-            color: white;
-            box-shadow: 0 0 12px rgba(239,68,68,0.4);
+            background: linear-gradient(135deg, #b45309, #92400e);
+            border-color: #fbbf24;
+            color: #fff7ed;
         }
+        .seat.active-villain .seat-stack { color: #fed7aa; }
         .dealer-button {
             position: absolute;
-            width: 18px; height: 18px;
+            top: -4px; right: -10px;
+            width: 16px; height: 16px;
             background: linear-gradient(135deg, #fef3c7, #fde68a);
             color: #78350f;
             border-radius: 50%;
@@ -276,6 +328,20 @@
             z-index: 10;
             box-shadow: 0 2px 4px rgba(0,0,0,0.3);
         }
+
+        /* --- Drill layout --- */
+        /* One column on a phone, two from 1024px up. The answer column is
+           pinned beside the spot rather than below it, which is what keeps the
+           feedback panel on screen. */
+        .train-grid { display: grid; gap: 1rem; }
+        @media (min-width: 1024px) {
+            .train-grid { grid-template-columns: minmax(0, 1fr) 360px; align-items: start; gap: 1.5rem; }
+        }
+        .answer-column { display: flex; flex-direction: column; gap: 0.75rem; }
+        @media (min-width: 1024px) {
+            .answer-column { position: sticky; top: 1rem; }
+        }
+        #train-view.is-active { display: block; }
 
         /* --- Accessibility: Reduced Motion --- */
         @media (prefers-reduced-motion: reduce) {
@@ -299,13 +365,6 @@
         }
 
         /* --- Skeleton Loading --- */
-        .skeleton {
-            background: linear-gradient(90deg, rgba(255,255,255,0.03) 25%, rgba(255,255,255,0.06) 50%, rgba(255,255,255,0.03) 75%);
-            background-size: 200% 100%;
-            animation: shimmer 1.5s infinite;
-            border-radius: 0.5rem;
-        }
-
         /* --- Shake Animation --- */
         @keyframes shake {
             0%, 100% { transform: translateX(0); }
@@ -356,8 +415,10 @@
             transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
             box-shadow: 0 8px 32px rgba(0,0,0,0.4);
             pointer-events: none;
+            opacity: 0;
+            visibility: hidden;
         }
-        .toast.show { transform: translateX(-50%) translateY(0); pointer-events: auto; }
+        .toast.show { transform: translateX(-50%) translateY(0); pointer-events: auto; opacity: 1; visibility: visible; }
         .toast-success { border-color: rgba(16, 185, 129, 0.3) !important; color: #34d399; }
         .toast-error { border-color: rgba(239, 68, 68, 0.3) !important; color: #fca5a5; }
         .toast-info { border-color: rgba(59, 130, 246, 0.3) !important; color: #93c5fd; }
@@ -541,63 +602,81 @@
         </div>
 
         <!-- Training Screen -->
-        <div id="train-view" class="hidden flex-col gap-4 md:gap-6 fade-in">
-            <div class="flex justify-between items-center text-[10px] text-gray-600 font-semibold tracking-[0.2em] uppercase"><button onclick="showSetup()" class="hover:text-white transition bg-white/5 px-3 py-1.5 rounded-lg hover:bg-white/10 border border-white/5 text-gray-500" aria-label="Back to Menu">&larr; MENU</button><span class="hidden sm:inline font-display text-sm tracking-[0.3em] text-gray-500">TEXAS HOLD'EM NL 6-MAX</span></div>
-            
-            <!-- HUD -->
-            <div class="grid grid-cols-2 md:grid-cols-4 gap-3 text-center">
-                <div class="hud-panel p-3 rounded-xl"><div class="text-[9px] text-gray-400 font-bold uppercase tracking-[0.2em]">Position</div><div id="pos-val" class="text-2xl font-display text-white tracking-wider mt-0.5">BTN</div></div>
-                <div class="hud-panel p-3 rounded-xl"><div class="text-[9px] text-gray-400 font-bold uppercase tracking-[0.2em]">Stack</div><div class="text-2xl font-display text-white tracking-wider mt-0.5">100 <span class="text-sm text-gray-500 font-body">BB</span></div></div>
-                <div class="hud-panel p-3 rounded-xl"><div class="text-[9px] text-gray-400 font-bold uppercase tracking-[0.2em]">Pot</div><div id="pot-val" class="text-2xl font-display text-emerald-400 tracking-wider mt-0.5">1.5 <span class="text-sm text-gray-500 font-body">BB</span></div></div>
-                <div class="hud-panel p-3 rounded-xl border-l-2 border-yellow-500/50 col-span-2 md:col-span-1 flex flex-col justify-center"><div class="text-[9px] text-gray-400 font-bold uppercase tracking-[0.2em]">Action</div><div id="act-val" class="text-sm font-semibold text-yellow-400 leading-tight mt-1 px-1">...</div></div>
-            </div>
+        <!-- Two columns on a wide screen: the spot on the left, the answer on
+             the right. The feedback panel used to sit below the cards and the
+             action buttons, which put it past the bottom of the viewport, so
+             every single hand cost a scroll. -->
+        <div id="train-view" class="hidden fade-in">
+            <div class="flex justify-between items-center text-[10px] text-gray-600 font-semibold tracking-[0.2em] uppercase mb-4"><button onclick="showSetup()" class="hover:text-white transition bg-white/5 px-3 py-1.5 rounded-lg hover:bg-white/10 border border-white/5 text-gray-500" aria-label="Back to Menu">&larr; MENU</button><span class="hidden sm:inline font-display text-sm tracking-[0.3em] text-gray-500">TEXAS HOLD'EM NL 6-MAX</span></div>
 
-            <!-- Session Info -->
-            <div class="session-bar" id="session-bar">
-                <span>Hand <span id="hand-count" class="text-white font-bold">0</span></span>
-                <span>Session <span id="session-accuracy" class="text-white font-bold">-</span></span>
-                <span id="streak-display" class="hidden streak-fire"></span>
-            </div>
-
-            <!-- Poker Table Visual -->
-            <div class="poker-table" id="poker-table-visual">
-                <div class="seat seat-UTG" id="seat-UTG">UTG</div>
-                <div class="seat seat-MP" id="seat-MP">MP</div>
-                <div class="seat seat-CO" id="seat-CO">CO</div>
-                <div class="seat seat-BTN" id="seat-BTN">BTN <div id="dealer-btn" class="dealer-button" style="top: -5px; right: -5px;">D</div></div>
-                <div class="seat seat-SB" id="seat-SB">SB</div>
-                <div class="seat seat-BB" id="seat-BB">BB</div>
-            </div>
-
-            <!-- Cards -->
-            <div class="flex justify-center gap-4 md:gap-8 my-4 md:my-8 py-8 relative perspective-1000">
-                <div class="absolute top-0 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-full h-1 bg-white/5 rounded-full blur-sm"></div>
-                <div id="card1" class="card" style="transform: rotate(-3deg) translateY(5px);"></div>
-                <div id="card2" class="card" style="transform: rotate(3deg) translateY(5px);"></div>
-            </div>
-
-            <!-- Controls -->
-            <div id="controls" class="grid grid-cols-3 gap-3 md:gap-4 mt-2">
-                <button onclick="act('FOLD')" class="btn-action btn-3d btn-fold h-20 md:h-24 rounded-xl text-2xl md:text-3xl shadow-lg flex flex-col justify-center items-center" aria-label="Fold (F key)">Fold <span class="text-[10px] md:text-xs opacity-50 font-body font-normal tracking-normal">(F)</span></button>
-                <button onclick="act('CALL')" id="btn-call" class="btn-action btn-3d btn-call h-20 md:h-24 rounded-xl text-2xl md:text-3xl shadow-lg flex flex-col justify-center items-center" aria-label="Call (C key)">Call <span class="text-[10px] md:text-xs opacity-50 font-body font-normal tracking-normal">(C)</span></button>
-                <button onclick="act('RAISE')" id="btn-raise" class="btn-action btn-3d btn-raise h-20 md:h-24 rounded-xl text-2xl md:text-3xl shadow-lg flex flex-col justify-center items-center" aria-label="Raise (R key)">Raise <span class="text-[10px] md:text-xs opacity-50 font-body font-normal tracking-normal">(R)</span></button>
-            </div>
-
-            <!-- Keyboard Hints -->
-            <div class="text-center mt-2 space-x-3 text-[10px] tracking-wider text-gray-500">
-                <kbd>F</kbd> Fold <span class="text-gray-700">&middot;</span> <kbd>C</kbd> Call <span class="text-gray-700">&middot;</span> <kbd>R</kbd> Raise <span class="text-gray-700">&middot;</span> <kbd>Space</kbd> Next
-            </div>
-
-            <!-- Feedback -->
-            <div id="feedback" class="hidden bg-gray-900/70 backdrop-blur-lg p-6 rounded-2xl border border-white/5 shadow-2xl fade-in z-20 relative" role="alert" aria-live="assertive">
-                <div class="flex flex-col md:flex-row gap-6">
-                    <div class="flex-1 flex flex-col justify-center space-y-4">
-                        <div><div class="text-[10px] text-gray-400 uppercase font-bold tracking-[0.2em]">Result</div><h2 id="fb-title" class="text-4xl font-display tracking-wider">Correct!</h2></div>
-                        <div class="bg-black/30 p-4 rounded-lg border-l-2 border-blue-500/50"><p id="fb-text" class="text-gray-400 text-sm leading-relaxed"></p></div>
-                        <button onclick="nextHand()" class="w-full bg-emerald-600 hover:bg-emerald-500 text-white py-4 rounded-xl font-display text-xl tracking-widest btn-3d border-b-emerald-800 mt-2 shadow-lg focus:ring-4 focus:ring-emerald-500/30 outline-none">NEXT HAND (SPACE) &rarr;</button>
+            <div class="train-grid">
+                <!-- Left: the spot -->
+                <div class="flex flex-col gap-3">
+                    <div class="grid grid-cols-2 md:grid-cols-4 gap-2 text-center">
+                        <div class="hud-panel p-2.5 rounded-xl"><div class="text-[9px] text-gray-400 font-bold uppercase tracking-[0.2em]">Position</div><div id="pos-val" class="text-xl font-display text-white tracking-wider mt-0.5">BTN</div></div>
+                        <div class="hud-panel p-2.5 rounded-xl"><div class="text-[9px] text-gray-400 font-bold uppercase tracking-[0.2em]">Stack</div><div class="text-xl font-display text-white tracking-wider mt-0.5">100 <span class="text-xs text-gray-500 font-body">BB</span></div></div>
+                        <div class="hud-panel p-2.5 rounded-xl"><div class="text-[9px] text-gray-400 font-bold uppercase tracking-[0.2em]">Pot</div><div id="pot-val" class="text-xl font-display text-emerald-400 tracking-wider mt-0.5">1.5 <span class="text-xs text-gray-500 font-body">BB</span></div></div>
+                        <div class="hud-panel p-2.5 rounded-xl border-l-2 border-amber-400/50 col-span-2 md:col-span-1 flex flex-col justify-center"><div class="text-[9px] text-gray-400 font-bold uppercase tracking-[0.2em]">Action</div><div id="act-val" class="text-xs font-semibold text-amber-300 leading-tight mt-1 px-1">...</div></div>
                     </div>
-                    <div class="flex-1 flex justify-center"><div id="matrix" class="matrix bg-black/30 p-2 rounded-lg border border-white/5"></div></div>
+
+                    <div class="session-bar" id="session-bar">
+                        <span>Hand <span id="hand-count" class="text-white font-bold">0</span></span>
+                        <span>Session <span id="session-accuracy" class="text-white font-bold">-</span></span>
+                        <span id="streak-display" class="hidden streak-fire"></span>
+                    </div>
+
+                    <!-- Hero is always seated at the bottom and the other seats
+                         rotate around them, the way every poker client does it,
+                         so position can be read at a glance. -->
+                    <div class="poker-table" id="poker-table-visual">
+                        <div class="table-pot" id="table-pot" aria-hidden="true"></div>
+                        <div class="seat" id="seat-UTG" data-pos="UTG"><span class="seat-name">UTG</span><span class="seat-stack">100</span></div>
+                        <div class="seat" id="seat-MP" data-pos="MP"><span class="seat-name">MP</span><span class="seat-stack">100</span></div>
+                        <div class="seat" id="seat-CO" data-pos="CO"><span class="seat-name">CO</span><span class="seat-stack">100</span></div>
+                        <div class="seat" id="seat-BTN" data-pos="BTN"><span class="seat-name">BTN</span><span class="seat-stack">100</span></div>
+                        <div class="seat" id="seat-SB" data-pos="SB"><span class="seat-name">SB</span><span class="seat-stack">100</span></div>
+                        <div class="seat" id="seat-BB" data-pos="BB"><span class="seat-name">BB</span><span class="seat-stack">100</span></div>
+                    </div>
+
+                    <div class="flex justify-center gap-4 md:gap-6 py-1 relative perspective-1000">
+                        <div id="card1" class="card" style="transform: rotate(-3deg) translateY(5px);"></div>
+                        <div id="card2" class="card" style="transform: rotate(3deg) translateY(5px);"></div>
+                    </div>
+
+                    <div id="controls" class="grid grid-cols-3 gap-2 md:gap-3">
+                        <button onclick="act('FOLD')" class="btn-action btn-3d btn-fold h-16 md:h-20 rounded-xl text-xl md:text-2xl shadow-lg flex flex-col justify-center items-center" aria-label="Fold (F key)">Fold <span class="text-[10px] opacity-60 font-body font-normal tracking-normal">(F)</span></button>
+                        <button onclick="act('CALL')" id="btn-call" class="btn-action btn-3d btn-call h-16 md:h-20 rounded-xl text-xl md:text-2xl shadow-lg flex flex-col justify-center items-center" aria-label="Call (C key)">Call <span class="text-[10px] opacity-60 font-body font-normal tracking-normal">(C)</span></button>
+                        <button onclick="act('RAISE')" id="btn-raise" class="btn-action btn-3d btn-raise h-16 md:h-20 rounded-xl text-xl md:text-2xl shadow-lg flex flex-col justify-center items-center" aria-label="Raise (R key)">Raise <span class="text-[10px] opacity-60 font-body font-normal tracking-normal">(R)</span></button>
+                    </div>
+
+                    <div class="text-center text-[10px] tracking-wider text-gray-500 space-x-3">
+                        <kbd>F</kbd> Fold <span class="text-gray-700">&middot;</span> <kbd>C</kbd> Call <span class="text-gray-700">&middot;</span> <kbd>R</kbd> Raise <span class="text-gray-700">&middot;</span> <kbd>Space</kbd> Next
+                    </div>
                 </div>
+
+                <!-- Right: the answer. Always on screen, so the range is
+                     something you read while deciding, not a reveal. -->
+                <aside class="answer-column" aria-label="Strategy">
+                    <div class="bg-gray-900/50 backdrop-blur p-3 rounded-2xl border border-white/5 shadow-xl">
+                        <div class="flex items-baseline justify-between mb-2">
+                            <span class="text-[9px] text-gray-400 uppercase font-bold tracking-[0.2em]">Range</span>
+                            <span id="matrix-state" class="text-[9px] text-gray-600 uppercase tracking-[0.15em]">hidden until you act</span>
+                        </div>
+                        <div id="matrix" class="matrix is-masked"></div>
+                        <div class="flex gap-3 justify-center mt-3 text-[9px] uppercase tracking-[0.15em] text-gray-400">
+                            <span class="legend-key"><i class="swatch act-RAISE"></i>Raise</span>
+                            <span class="legend-key"><i class="swatch act-CALL"></i>Call</span>
+                            <span class="legend-key"><i class="swatch act-FOLD"></i>Fold</span>
+                        </div>
+                    </div>
+
+                    <div id="feedback" class="hidden bg-gray-900/70 backdrop-blur-lg p-4 rounded-2xl border border-white/5 shadow-2xl fade-in" role="alert" aria-live="assertive">
+                        <div class="text-[10px] text-gray-400 uppercase font-bold tracking-[0.2em]">Result</div>
+                        <h2 id="fb-title" class="text-3xl font-display tracking-wider">Correct!</h2>
+                        <div class="bg-black/30 p-3 rounded-lg border-l-2 border-sky-500/50 mt-3"><p id="fb-text" class="text-gray-400 text-sm leading-relaxed"></p></div>
+                        <button id="next-btn" onclick="nextHand()" class="w-full bg-emerald-600 hover:bg-emerald-500 text-white py-3 rounded-xl font-display text-lg tracking-widest btn-3d border-b-emerald-800 mt-3 shadow-lg focus:ring-4 focus:ring-emerald-500/30 outline-none cursor-pointer">NEXT HAND (SPACE) &rarr;</button>
+                    </div>
+                </aside>
             </div>
         </div>
 
@@ -683,6 +762,7 @@
     <script>
         let currentScenario = null;
         let sessionToken = null;
+        let lastChart = null;
         let musicPlaylist = [];
         let currentTrackIndex = 0;
         let handCount = 0;
@@ -950,7 +1030,7 @@
                 focus_situation: document.getElementById('focus-situation').value
             };
             let data = await apiCall('start', settings);
-            if (data) { showView('train-view'); document.getElementById('train-view').classList.add('flex'); renderScenario(data); document.body.focus(); }
+            if (data) { showView('train-view'); renderScenario(data); document.body.focus(); }
         }
 
         function renderScenario(sc) {
@@ -963,26 +1043,7 @@
             document.getElementById('pos-val').textContent = sc.hero_pos;
             document.getElementById('pot-val').textContent = sc.pot + " BB";
 
-            ['UTG', 'MP', 'CO', 'BTN', 'SB', 'BB'].forEach(pos => {
-                let el = document.getElementById(`seat-${pos}`);
-                el.className = `seat seat-${pos}`;
-                if (pos === 'BTN') {
-                    if (!el.querySelector('.dealer-button')) {
-                         el.innerHTML += '<div class="dealer-button" style="top: -5px; right: -5px;">D</div>';
-                    }
-                } else {
-                    let btn = el.querySelector('.dealer-button');
-                    if (btn) btn.remove();
-                }
-            });
-
-            let heroSeat = document.getElementById(`seat-${sc.hero_pos}`);
-            if (heroSeat) heroSeat.classList.add('active-hero');
-
-            sc.actions.forEach(action => {
-                let villainSeat = document.getElementById(`seat-${action.pos}`);
-                if (villainSeat) villainSeat.classList.add('active-villain');
-            });
+            renderTable(sc);
 
             document.getElementById('act-val').textContent = sc.action_text || '';
 
@@ -997,6 +1058,11 @@
             renderCard('card1', sc.card1); renderCard('card2', sc.card2);
             document.getElementById('controls').classList.remove('hidden');
             document.getElementById('feedback').classList.add('hidden');
+            // Keep the grid in place and just mask the range, so answering a
+            // hand does not move anything on screen.
+            renderMatrix(lastChart, null, 'matrix');
+            document.getElementById('matrix').classList.add('is-masked');
+            document.getElementById('matrix-state').textContent = 'hidden until you act';
             document.getElementById('card1').classList.remove('animate-deal'); document.getElementById('card2').classList.remove('animate-deal');
             void document.getElementById('card1').offsetWidth;
             document.getElementById('card1').classList.add('animate-deal'); document.getElementById('card2').classList.add('animate-deal');
@@ -1004,6 +1070,58 @@
             // Play deal SFX with slight delay for second card
             playSfx('sfx-deal');
             setTimeout(() => playSfx('sfx-chip'), 120);
+        }
+
+        // Order of action, which is also the clockwise seating order.
+        const SEAT_ORDER = ['UTG', 'MP', 'CO', 'BTN', 'SB', 'BB'];
+
+        function renderTable(sc) {
+            const heroIndex = SEAT_ORDER.indexOf(sc.hero_pos);
+            const bets = {};
+            (sc.actions || []).forEach(a => { bets[a.pos] = a; });
+
+            SEAT_ORDER.forEach((pos, index) => {
+                const seat = document.getElementById(`seat-${pos}`);
+                // Slot 0 is hero at the bottom; everyone else sits clockwise
+                // from there in order of action.
+                seat.dataset.slot = (index - heroIndex + 6) % 6;
+                seat.classList.remove('active-hero', 'active-villain');
+                if (pos === sc.hero_pos) seat.classList.add('active-hero');
+                else if (bets[pos]) seat.classList.add('active-villain');
+
+                seat.querySelector('.seat-stack').textContent = sc.stack;
+
+                seat.querySelector('.dealer-button')?.remove();
+                if (pos === 'BTN') {
+                    const button = document.createElement('div');
+                    button.className = 'dealer-button';
+                    button.textContent = 'D';
+                    seat.appendChild(button);
+                }
+
+                // Chips in front of anyone who has put money in. The spot used
+                // to be legible only from the text in the HUD.
+                seat.querySelector('.seat-bet')?.remove();
+                const bet = bets[pos];
+                const posted = pos === 'SB' ? 0.5 : (pos === 'BB' ? 1 : 0);
+                const amount = bet ? bet.amt : posted;
+                if (amount > 0) {
+                    const chip = document.createElement('div');
+                    chip.className = 'seat-bet';
+                    chip.textContent = `${(+amount).toFixed(1).replace(/\.0$/, '')}bb`;
+                    const slot = +seat.dataset.slot;
+                    // Push the chip toward the middle of the table.
+                    chip.style.cssText = slot === 0 ? 'bottom: 100%; left: 50%; transform: translate(-50%, -6px);'
+                        : slot === 3 ? 'top: 100%; left: 50%; transform: translate(-50%, 6px);'
+                        : slot < 3 ? 'left: 100%; top: 50%; transform: translate(6px, -50%);'
+                        : 'right: 100%; top: 50%; transform: translate(-6px, -50%);';
+                    seat.appendChild(chip);
+                }
+            });
+
+            const pot = document.getElementById('table-pot');
+            pot.textContent = `POT ${sc.pot}bb`;
+            pot.classList.add('visible');
         }
 
         function renderCard(id, card) {
@@ -1020,8 +1138,6 @@
             btns.forEach(b => { b.disabled = true; b.classList.add('opacity-50'); });
 
             const fb = document.getElementById('feedback');
-            fb.classList.remove('hidden');
-            fb.innerHTML = '<div class="flex flex-col md:flex-row gap-6"><div class="flex-1 space-y-4"><div class="skeleton h-10 w-1/3"></div><div class="skeleton h-20 w-full"></div><div class="skeleton h-12 w-full"></div></div><div class="flex-1"><div class="skeleton h-64 w-full"></div></div></div>';
 
             const oldBankroll = parseInt(document.getElementById('bankroll').textContent.replace(/[$,]/g, '')) || 0;
             let result = await apiCall('act', {action: action, token: sessionToken});
@@ -1069,11 +1185,27 @@
             void bankrollEl.offsetWidth;
             bankrollEl.classList.add(result.bankroll >= oldBankroll ? 'bankroll-up' : 'bankroll-down');
 
-            fb.innerHTML = '<div class="flex flex-col md:flex-row gap-6"><div class="flex-1 flex flex-col justify-center space-y-4"><div><div class="text-[10px] text-gray-400 uppercase font-bold tracking-[0.2em]">Result</div><h2 id="fb-title" class="text-4xl font-display tracking-wider"></h2></div><div class="bg-black/30 p-4 rounded-lg border-l-2 border-blue-500/50"><p id="fb-text" class="text-gray-400 text-sm leading-relaxed"></p></div><button onclick="nextHand()" class="w-full bg-emerald-600 hover:bg-emerald-500 text-white py-4 rounded-xl font-display text-xl tracking-widest btn-3d border-b-emerald-800 mt-2 shadow-lg focus:ring-4 focus:ring-emerald-500/30 outline-none cursor-pointer">NEXT HAND (SPACE) &rarr;</button></div><div class="flex-1 flex justify-center"><div id="matrix" class="matrix bg-black/30 p-2 rounded-lg border border-white/5"></div></div></div>';
-            document.getElementById('fb-title').textContent = result.is_correct ? 'Correct!' : 'Incorrect';
-            document.getElementById('fb-title').className = result.is_correct ? 'text-4xl font-display tracking-wider text-emerald-400' : 'text-4xl font-display tracking-wider text-red-500';
+            // Fill the panel that is already there rather than rebuilding it,
+            // so nothing on screen moves when a hand is answered.
+            const title = document.getElementById('fb-title');
+            title.textContent = result.is_correct ? 'Correct!' : 'Incorrect';
+            title.className = 'text-3xl font-display tracking-wider ' +
+                (result.is_correct ? 'text-emerald-400' : 'text-amber-400');
             document.getElementById('fb-text').textContent = result.explanation;
+
+            lastChart = result.chart;
             renderMatrix(result.chart, result.hero_hand, 'matrix');
+            document.getElementById('matrix').classList.remove('is-masked');
+            document.getElementById('matrix-state').textContent =
+                `${result.hero_hand} - ${result.correct_action.toLowerCase()}`;
+            fb.classList.remove('hidden');
+
+            // On a narrow screen the answer column sits under the spot, so
+            // bring it into view; on a wide one it is already beside it.
+            if (window.matchMedia('(max-width: 1023px)').matches) {
+                fb.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+            }
+            document.getElementById('next-btn').focus({ preventScroll: true });
             btns.forEach(b => { b.disabled = false; b.classList.remove('opacity-50'); });
         }
 

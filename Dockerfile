@@ -3,7 +3,7 @@ FROM python:3.12-slim
 # Run as a non-root user. The image previously ran everything as root, which
 # OpenShift's restricted SCC does not want and which gives a compromised
 # process far more than it needs.
-RUN useradd --create-home --uid 1001 trainer
+RUN useradd --create-home --uid 1001 --gid 0 trainer
 
 WORKDIR /app
 
@@ -12,8 +12,13 @@ RUN pip install --no-cache-dir --upgrade pip \
  && pip install --no-cache-dir -r requirements.txt
 
 COPY . .
-RUN chown -R trainer:trainer /app
-USER trainer
+
+# OpenShift's restricted SCC ignores USER and runs the container as an
+# arbitrary UID in group 0, so ownership by a specific user is useless there -
+# the group bits are what the process actually gets. Granting group 0 the same
+# access as the owner works under both OpenShift and a plain `docker run`.
+RUN chgrp -R 0 /app && chmod -R g=u /app
+USER 1001
 
 EXPOSE 8080
 

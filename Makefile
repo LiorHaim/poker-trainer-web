@@ -4,7 +4,7 @@ APP_NAME := poker-trainer
 PYTHON := venv/bin/python3
 
 # --- Commands ---
-.PHONY: all deploy build clean logs url test lint validate-charts check dev-install local-run db-start db-stop update wait-for-rollout check-tools check-login
+.PHONY: all deploy build clean logs url test lint validate-charts check dev-install local-run db-start db-stop update wait-for-rollout check-tools check-login ensure-secret
 
 # Default: Deploy everything
 all: deploy
@@ -27,6 +27,7 @@ deploy: check-tools check-login
 	@echo "🚀 Starting deployment to project: $(PROJECT_NAME)..."
 	-oc new-project $(PROJECT_NAME) 2>/dev/null || echo "   (Project '$(PROJECT_NAME)' already exists, switching to it...)"
 	@oc project $(PROJECT_NAME)
+	@$(MAKE) ensure-secret
 	@echo "📦 Applying configuration..."
 	@oc apply -f openshift.yaml
 	@echo "🏗️  Starting build..."
@@ -34,6 +35,13 @@ deploy: check-tools check-login
 	@echo "✅ Build complete! Waiting for rollout..."
 	@$(MAKE) wait-for-rollout
 	@$(MAKE) url
+
+# 2b. SECRET_KEY signs session cookies and training tokens. Generated once and
+#     then left alone: rotating it logs everyone out and voids hands in play.
+ensure-secret:
+	@oc get secret poker-trainer-secrets >/dev/null 2>&1 && echo "🔑 Secret already present, leaving it alone" || ( \
+		echo "🔑 Generating SECRET_KEY..." && \
+		oc create secret generic poker-trainer-secrets --from-literal=secret-key="$$(openssl rand -hex 32)" )
 
 # 3. Trigger a rebuild (use this after code changes)
 update: check-tools check-login

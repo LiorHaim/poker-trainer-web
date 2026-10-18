@@ -1,14 +1,11 @@
 apiVersion: v1
 kind: List
 items:
-# --- Secret for sensitive config ---
-- apiVersion: v1
-  kind: Secret
-  metadata:
-    name: poker-trainer-secrets
-  type: Opaque
-  stringData:
-    secret-key: "CHANGE-ME-TO-A-RANDOM-64-CHAR-STRING"
+# The poker-trainer-secrets Secret is deliberately NOT defined here. It holds
+# SECRET_KEY, which signs session cookies and training tokens, so a value
+# committed to the repo would be a value everyone has. `make deploy` generates
+# a random one on first deploy and leaves it alone afterwards - rotating it
+# would log everyone out and invalidate every hand in play.
 
 # --- MongoDB PVC ---
 - apiVersion: v1
@@ -96,7 +93,10 @@ items:
     annotations:
       image.openshift.io/triggers: '[{"from":{"kind":"ImageStreamTag","name":"poker-trainer:latest"},"fieldPath":"spec.template.spec.containers[?(@.name==\"poker-trainer\")].image"}]'
   spec:
-    replicas: 1
+    # Training state travels in a signed token rather than a per-process dict,
+    # so a hand dealt by one replica can be answered by any other. Before that
+    # this had to stay at 1.
+    replicas: 2
     selector:
       matchLabels:
         app: poker-trainer

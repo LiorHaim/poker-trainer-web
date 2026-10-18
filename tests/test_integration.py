@@ -1,6 +1,5 @@
-import unittest
 import sys
-import os
+import unittest
 from pathlib import Path
 
 # Add parent directory to path
@@ -8,8 +7,7 @@ sys.path.insert(0, str(Path(__file__).parent.parent))
 
 from logic.strategy import StrategyManager
 from logic.trainer import TrainingEngine
-from logic.statistics_db import StatisticsManagerDB
-from logic.scenario import Action
+
 
 class MockStatsManager:
     """Mock for testing without DB"""
@@ -38,7 +36,7 @@ class TestIntegration(unittest.TestCase):
             "training_mode": "Drill"
         }
         self.trainer.configure_training(settings)
-        
+
         # Try generating 100 scenarios to catch any edge case errors
         for _ in range(100):
             sc = self.trainer.get_next_scenario()

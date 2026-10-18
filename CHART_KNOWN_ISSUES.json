@@ -1,0 +1,44 @@
+{
+  "_comment": [
+    "Validation errors that are real, understood, and scheduled for a later phase.",
+    "They do not fail CI; anything NOT listed here does.",
+    "Removing a chart from a list is mandatory once it is fixed - the validator fails",
+    "on baseline entries that no longer fire, so this file cannot silently rot.",
+    "See IMPROVEMENT_PLAN.md for the phase each entry belongs to."
+  ],
+  "known": [
+    {
+      "code": "duplicate-node",
+      "reason": "The '*_vs_*_RFI' and '*_3Bet_vs_*' chart families model the same decision - hero faces an open and picks fold/call/raise - and disagree on up to 34 of 169 hands. Both load, and the trainer picks one at random, so a user drilling the same spot is taught both answers. Phase 1 collapses each pair into a single chart per node.",
+      "resolved_by": "phase-1: collapse duplicate node families",
+      "charts": [
+        "cash_6max_100bb_BB_3Bet_vs_BTN",
+        "cash_6max_100bb_BB_3Bet_vs_CO",
+        "cash_6max_100bb_BB_3Bet_vs_MP",
+        "cash_6max_100bb_BB_3Bet_vs_SB",
+        "cash_6max_100bb_BB_3Bet_vs_UTG",
+        "cash_6max_100bb_BB_vs_BTN_RFI",
+        "cash_6max_100bb_BB_vs_CO_RFI",
+        "cash_6max_100bb_BB_vs_MP_RFI",
+        "cash_6max_100bb_BB_vs_SB_RFI",
+        "cash_6max_100bb_BB_vs_UTG_RFI",
+        "cash_6max_100bb_SB_3Bet_vs_BTN",
+        "cash_6max_100bb_SB_3Bet_vs_CO",
+        "cash_6max_100bb_SB_3Bet_vs_MP",
+        "cash_6max_100bb_SB_3Bet_vs_UTG",
+        "cash_6max_100bb_SB_vs_BTN_RFI",
+        "cash_6max_100bb_SB_vs_CO_RFI",
+        "cash_6max_100bb_SB_vs_MP_RFI",
+        "cash_6max_100bb_SB_vs_UTG_RFI"
+      ]
+    },
+    {
+      "code": "unreachable-continue",
+      "reason": "BTN continues vs a BB 3-bet with 54s, 64s, 75s and 86s, none of which appear in BTN's own opening range. Fixing it depends on the BTN RFI range being retuned first (it currently opens 34.3%, roughly 11 points too tight), so the two land together.",
+      "resolved_by": "phase-1: retune BTN RFI and reconcile the vs-3Bet node",
+      "charts": [
+        "cash_6max_100bb_BTN_vs_BB_3Bet"
+      ]
+    }
+  ]
+}

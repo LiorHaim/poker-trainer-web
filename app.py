@@ -1,17 +1,16 @@
-import os
-import sys
 import logging
-import secrets
-import time
+import os
 import random
+import secrets
+import sys
+import time
 from collections import defaultdict
+
 from flask import Flask, jsonify, request, send_from_directory, session
-from logic.strategy import StrategyManager
+
+from logic.scenario import Action, Position, PreflopAction, TrainingResult, TrainingScenario, get_random_hand
 from logic.statistics_db import StatisticsManagerDB
-from logic.scenario import (
-    Action, Position, PreflopAction, TrainingScenario,
-    TrainingResult, get_random_hand
-)
+from logic.strategy import StrategyManager
 
 logging.basicConfig(
     level=logging.INFO,

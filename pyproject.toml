@@ -1,0 +1,19 @@
+# Tooling configuration only - the app is run from source, not installed as a package.
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-q --strict-markers"
+filterwarnings = ["error::DeprecationWarning:logic.*"]
+
+[tool.ruff]
+line-length = 120
+target-version = "py310"
+exclude = [".git", "venv", "__pycache__"]
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I", "UP", "B"]
+ignore = [
+    "E501",  # long lines are handled by line-length, not worth churning the charts' docstrings
+    "E701",  # logic/scenario.py uses one-line compound statements deliberately
+    "E702",
+]

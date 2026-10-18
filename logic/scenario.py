@@ -5,7 +5,7 @@ This version is upgraded to handle "vs_4Bet" scenarios.
 import random
 from dataclasses import dataclass, field
 from enum import Enum
-from typing import Union, Dict, Any
+from typing import Any
 
 # --- (Card, Hand, Deck, Position, Action, Street... classes are unchanged) ---
 RANKS = "23456789TJQKA"
@@ -71,16 +71,16 @@ class TrainingScenario:
     hero_hand: Hand = field(default_factory=get_random_hand)
     actions_before_hero: list[PreflopAction] = field(default_factory=list)
     chart_key: str = ""
-    
+
     situation: str = "RFI" # e.g., "RFI", "vs_RFI", "vs_3Bet", "vs_4Bet"
     hero_open_size_bb: float = 0.0 # Hero's *own* open size in a vs_3Bet spot
     hero_3bet_size_bb: float = 0.0 # Hero's *own* 3-bet size in a vs_4Bet spot
-    
+
     @property
     def pot_bb(self) -> float:
         """Calculates the current pot size in BBs."""
         pot = 1.5 # Blinds
-        
+
         # Add hero's own open/3bet
         if self.situation == "vs_3Bet":
             pot += self.hero_open_size_bb
@@ -98,11 +98,11 @@ class TrainingScenario:
             if act.action == Action.RAISE:
                 pot += act.size_bb # Add the 3-bet or 4-bet amount
             elif act.action == Action.CALL:
-                pot += act.size_bb 
-                
+                pot += act.size_bb
+
         # This logic is getting complex. Let's hardcode for simplicity
         # based on standard sizings.
-        
+
         if self.situation == "RFI": return 1.5
         if self.situation == "vs_RFI": return 4.5 # 1.5 blinds + 3.0 raise
         if self.situation == "3Bet": return 4.5 # 1.5 blinds + 3.0 villain open (we're deciding to 3-bet)
@@ -116,37 +116,37 @@ class TrainingScenario:
     def to_call_bb(self) -> float:
         """Calculates the amount the hero needs to call in BBs."""
         if not self.actions_before_hero:
-            if self.hero_position == Position.SB: return 0.5 
+            if self.hero_position == Position.SB: return 0.5
             if self.hero_position == Position.BB: return 1.0
             return 0.0 # RFI
-        
+
         last_raise_size = self.actions_before_hero[-1].size_bb
-        
+
         if self.situation == "vs_4Bet":
             # Call amount is 4-bet size MINUS our 3-bet
             return last_raise_size - self.hero_3bet_size_bb
-        
+
         if self.situation == "vs_3Bet":
             # Call amount is 3-bet size MINUS our open
             return last_raise_size - self.hero_open_size_bb
-        
+
         if self.situation == "vs_RFI":
             if self.hero_position == Position.SB: return last_raise_size - 0.5
             if self.hero_position == Position.BB: return last_raise_size - 1.0
             return last_raise_size # Calling an open
-        
+
         if self.situation == "3Bet":
             # Hero is deciding to 3-bet, so "call" would be the villain's open
             if self.hero_position == Position.SB: return last_raise_size - 0.5
             if self.hero_position == Position.BB: return last_raise_size - 1.0
             return last_raise_size
-        
+
         if self.situation == "squeeze":
             # Hero faces an open and a call, needs to call the open amount
             if self.hero_position == Position.SB: return last_raise_size - 0.5
             if self.hero_position == Position.BB: return last_raise_size - 1.0
             return last_raise_size
-        
+
         return 0.0 # Should not be hit
 
 # --- Training Result ---
@@ -157,4 +157,4 @@ class TrainingResult:
     correct_action: Action
     explanation: str
     is_correct: bool
-    compiled_chart: Dict[str, Any]
+    compiled_chart: dict[str, Any]

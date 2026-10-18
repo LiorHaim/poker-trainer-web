@@ -29,6 +29,30 @@ All charts are for **Cash Game, 6-Max, 100BB effective stacks**:
 | vs 4-Bet | UTG/MP/CO/SB facing 4-bets |
 | Squeeze | SB & BB squeeze vs opener+caller combos |
 
+Chart files are validated against a schema at startup and in CI — see
+[`docs/CHART_SCHEMA.md`](docs/CHART_SCHEMA.md) for the format and
+[`CHART_KNOWN_ISSUES.json`](CHART_KNOWN_ISSUES.json) for the strategy problems
+currently being worked through.
+
+## Project Status
+
+An audit of the chart data and the app is written up in
+[`IMPROVEMENT_PLAN.md`](IMPROVEMENT_PLAN.md), with a phased plan to work through
+it. Progress:
+
+| Phase | Work | Status |
+|---|---|---|
+| 0 | Chart schema, validation, invariant tests, CI | done |
+| 1 | Collapse duplicate decision nodes; retune CO/BTN/SB opens and blind defense; wire per-chart sizings | next |
+| 2 | Deal hands only from ranges that can reach the node | planned |
+| 3 | Mixed-frequency charts and EV-loss scoring | planned |
+| 4 | Stateless scenario tokens, blueprints, rollup stats | planned |
+| 5 | Frontend rebuild | planned |
+
+Known strategic gaps are tracked as `xfail` tests in
+`tests/test_chart_invariants.py`, so each one turns into a build failure the
+moment it is fixed and the marker goes stale.
+
 ## Tech Stack
 
 - **Backend:** Python, Flask, Gunicorn
@@ -63,6 +87,13 @@ make local-run
 
 The app will be available at **http://localhost:8080**.
 
+### Developing
+
+```bash
+pip install -r requirements-dev.txt
+make check          # lint + chart validation + tests, same as CI
+```
+
 ### Run with Docker
 
 ```bash
@@ -75,7 +106,11 @@ docker run -p 8080:8080 -e MONGO_URI="mongodb://host.docker.internal:27017/poker
 | Command | Description |
 |---------|-------------|
 | `make local-run` | Start MongoDB via Podman and run the app in debug mode |
-| `make test` | Run the test suite |
+| `make check` | Everything CI runs: lint, chart validation, tests |
+| `make test` | Run the test suite (pytest) |
+| `make lint` | Run ruff |
+| `make validate-charts` | Validate every strategy chart against the schema |
+| `make dev-install` | Install dev dependencies (pytest, ruff) |
 | `make deploy` | Build and deploy to OpenShift |
 | `make update` | Rebuild and redeploy after code changes |
 | `make logs` | Tail application logs |
@@ -111,6 +146,7 @@ docker run -p 8080:8080 -e MONGO_URI="mongodb://host.docker.internal:27017/poker
 | `SECRET_KEY` | Auto-generated | Flask session secret (required in production) |
 | `FLASK_ENV` | — | Set to `production` for secure cookies |
 | `FLASK_DEBUG` | `0` | Set to `1` for debug mode |
+| `CHART_VALIDATION` | — | Set to `strict` to refuse to start if any strategy chart fails validation |
 
 ## License
 

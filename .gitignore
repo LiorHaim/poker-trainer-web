@@ -8,3 +8,9 @@ __pycache__/
 dist/
 build/
 .env
+
+# Test and review artifacts
+.pytest_cache/
+.ruff_cache/
+shots/
+.playwright-mcp/

@@ -4,7 +4,7 @@ APP_NAME := poker-trainer
 PYTHON := venv/bin/python3
 
 # --- Commands ---
-.PHONY: all deploy build clean logs url test local-run db-start db-stop update wait-for-rollout check-tools check-login
+.PHONY: all deploy build clean logs url test lint validate-charts check dev-install local-run db-start db-stop update wait-for-rollout check-tools check-login
 
 # Default: Deploy everything
 all: deploy
@@ -65,7 +65,22 @@ logs:
 # 8. Local Development
 test:
 	@echo "🧪 Running tests..."
-	@$(PYTHON) tests/test_integration.py
+	@$(PYTHON) -m pytest
+
+lint:
+	@echo "🔍 Linting..."
+	@$(PYTHON) -m ruff check .
+
+validate-charts:
+	@echo "🃏 Validating strategy charts..."
+	@$(PYTHON) scripts/validate_charts.py
+
+# Everything CI runs, in the same order.
+check: lint validate-charts test
+
+dev-install:
+	@echo "📦 Installing dev dependencies..."
+	@$(PYTHON) -m pip install -r requirements-dev.txt
 
 db-start:
 	@echo "🐘 Starting local MongoDB (Podman)..."

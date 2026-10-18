@@ -36,7 +36,10 @@ RANKS = "AKQJT98765432"
 POSITIONS = ("UTG", "MP", "CO", "BTN", "SB", "BB")
 ACTIONS = ("FOLD", "CALL", "RAISE")
 GAME_TYPES = ("cash", "mtt")
-SITUATIONS = ("RFI", "vs_RFI", "3Bet", "vs_3Bet", "vs_4Bet", "squeeze")
+#: `vs_RFI` covers the whole "hero faces an open" decision, raise branch included.
+#: There used to be a separate `3Bet` situation describing the same node, which
+#: meant two charts per spot with conflicting answers; it was removed in phase 1.
+SITUATIONS = ("RFI", "vs_RFI", "vs_3Bet", "vs_4Bet", "squeeze")
 
 #: Positions in order of action preflop. Used to sanity check who can face whom.
 POSITION_ORDER = {pos: i for i, pos in enumerate(POSITIONS)}
@@ -57,6 +60,24 @@ def _all_hands() -> frozenset[str]:
 #: The 169 canonical starting hands ("AA", "AKs", "AKo", ...).
 ALL_HANDS = _all_hands()
 
+#: Number of card combinations behind each hand class, and the total deck.
+#: Range frequencies are quoted combo-weighted by convention: a range is "22%"
+#: because it is 22% of the 1326 hands you can be dealt, not 22% of the 169
+#: classes. The two differ a lot - offsuit hands are 12 combos but suited only
+#: 4 - so a range that is 34% of classes can be 28% of combos.
+TOTAL_COMBOS = 1326
+
+
+def combo_count(hand: str) -> int:
+    if len(hand) == 2:
+        return 6  # pair
+    return 4 if hand.endswith("s") else 12
+
+
+def combo_frequency(hands: Iterable[str]) -> float:
+    """Share of all 1326 dealable hands, as a percentage."""
+    return 100.0 * sum(combo_count(hand) for hand in hands) / TOTAL_COMBOS
+
 #: Metadata keys every chart must define.
 REQUIRED_METADATA = (
     "chart_id",
@@ -73,7 +94,6 @@ REQUIRED_METADATA = (
 SITUATION_REQUIREMENTS: dict[str, tuple[str, ...]] = {
     "RFI": (),
     "vs_RFI": ("villain_position",),
-    "3Bet": ("villain_position",),
     "vs_3Bet": ("villain_position",),
     "vs_4Bet": ("villain_position",),
     "squeeze": ("opener_position", "caller_position"),
@@ -293,9 +313,9 @@ def decision_node_id(meta: dict) -> tuple | None:
     Identify the decision node a chart models, so two charts describing the same
     decision can be detected.
 
-    `vs_RFI` and `3Bet` are deliberately mapped to the same node: both are "hero
-    faces an open and chooses fold/call/raise". The repo currently ships both for
-    nine spots, with contradictory answers.
+    Kept as a distinct concept from `situation` so that if a second way of
+    describing the same decision is ever introduced again, it collides here
+    rather than shipping two charts for one spot.
     """
     situation = meta.get("situation")
     if situation not in SITUATIONS:
@@ -303,7 +323,7 @@ def decision_node_id(meta: dict) -> tuple | None:
 
     common = (meta.get("game_type"), meta.get("table_size"), meta.get("stack_depth"), meta.get("hero_position"))
 
-    if situation in ("vs_RFI", "3Bet"):
+    if situation == "vs_RFI":
         return (*common, "facing_open", meta.get("villain_position"))
     if situation == "squeeze":
         return (*common, "squeeze", meta.get("opener_position"), meta.get("caller_position"))

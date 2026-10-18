@@ -20,27 +20,34 @@ visual polish, deployment automation. The ceiling is limited by three things, in
 
 ### 1.1 Measured range errors
 
-Opening frequencies, measured across all 169 combos:
+> **Correction.** The figures below were first written as percentages of the 169
+> hand *classes*, but range sizes are quoted combo-weighted — a share of the 1326
+> hands you can be dealt. Offsuit hands are 12 combos and suited only 4, so the
+> two differ by several points. The table is combo-weighted; it changes the
+> verdict for UTG, MP and SB.
+
+Opening frequencies, combo-weighted:
 
 | Position | Chart | Reference (100bb 6-max) | Status |
 |---|---|---|---|
-| UTG | 16.0% | 15–18% | ok |
-| MP  | 22.5% | 20–23% | ok |
-| CO  | **40.2%** | 26–30% | **way too wide** |
-| BTN | **34.3%** | 45–50% | **way too tight** |
-| SB  | 53.8% raise-only | ~40% raise (+limp) or ~44% pure-raise | too wide, and no limp branch |
+| UTG | 11.2% | 15–18% | too tight |
+| MP  | 16.0% | 20–23% | too tight |
+| CO  | **33.3%** | 26–30% | **too wide** |
+| BTN | **27.9%** | 45–50% | **far too tight** |
+| SB  | 46.3% raise-only | ~40–45% pure-raise | about right, but no limp branch |
 
 CO opens *wider than BTN* — the positional ordering is inverted at the two most important seats.
 `cash_6max_100bb_BTN_RFI.json`'s own explanation text says *"we play a very wide and aggressive range (~45–50%)"*
 while the chart it ships is 34.3%. The coaching text and the data disagree.
 
-BB defense is systematically too tight — getting 3.5:1 closing the action, BB should defend ~55–60% vs a BTN open:
+BB defense is systematically too tight — closing the action against a 2.5bb open, BB should defend far wider:
 
-| Node | Chart defend% | Reference |
+| Node | Chart defend% (combo) | Reference |
 |---|---|---|
-| BB vs BTN | 40.8% | 55–60% |
-| BB vs CO  | 33.7% | ~45% |
-| BB vs UTG | 24.3% | ~33% |
+| BB vs BTN | 34.2% | 55–60% |
+| BB vs CO  | 26.4% | ~45% |
+| BB vs MP  | 20.1% | ~38% |
+| BB vs UTG | 16.1% | ~33% |
 
 ### 1.2 Two charts give contradictory answers for the same decision node
 
@@ -78,10 +85,10 @@ that only a subset of hands reach:
 
 | Node | Hands that actually reach it | Fraction of random deals that are impossible |
 |---|---|---|
-| `UTG_vs_BTN_3Bet` | 27/169 (UTG's opening range) | **84%** |
-| `UTG_vs_4Bet` | 27/169 | 84% |
-| `MP_vs_4Bet` | 38/169 | 78% |
-| `CO_vs_BB_3Bet` | 68/169 | 60% |
+| `UTG_vs_BTN_3Bet` | UTG's opening range | **~89%** |
+| `UTG_vs_4Bet` | same | ~89% |
+| `MP_vs_4Bet` | MP's opening range | ~84% |
+| `CO_vs_BB_3Bet` | CO's opening range | ~67% |
 
 So the trainer regularly presents "you opened UTG and BTN 3-bet you — you hold 72o." That node cannot exist. It is
 also a free +100 bankroll, because the answer is always FOLD. `vs_4Bet` charts are 97% FOLD; drilling them as

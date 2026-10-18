@@ -1,20 +1,31 @@
 {
   "metadata": {
     "chart_id": "cash_6max_100bb_UTG_RFI",
-    "description": "6-Max Cash Game, 100bb deep. Hero is Under the Gun (UTG) and it has folded to them (Raise First In).",
+    "description": "6-Max Cash, 100bb. Folded to Hero in UTG. Open to 2.5bb or fold.",
     "game_type": "cash",
     "table_size": 6,
     "stack_depth": 100,
     "hero_position": "UTG",
     "situation": "RFI",
+    "sizings": {
+      "open_bb": 2.5
+    },
+    "source": {
+      "type": "authored",
+      "detail": "Hand-authored from standard 6-max 100bb preflop theory. NOT solver output - these are reasonable reference ranges, not an equilibrium. Replace with solver exports when available.",
+      "date": "2026-10-18",
+      "spec": {
+        "RAISE": "22+, ATs+, A5s-A4s, KTs+, QTs+, JTs, T9s, 98s, 87s, 76s, ATo+, KQo"
+      }
+    },
     "explanations": {
-      "RAISE": "From UTG (Under the Gun), we must play a very tight and strong range. This hand is a premium open-raise for value.",
-      "FOLD": "This hand is not strong enough to profitably open-raise from early position. We are out of position against 5 other players. This is a clear fold."
+      "RAISE": "UTG opens into five players, so the range is tight and made of hands that flop well and are rarely dominated. Suited broadways, pairs, and the strong suited wheel aces that can 4-bet bluff later.",
+      "FOLD": "Five players still to act and no position. Hands that are playable on the Button are losers here - the cost of being dominated and out of position outweighs the blinds."
     }
   },
   "actions": {
     "RAISE": [
-      "AA", "KK", "QQ", "JJ", "TT", "99", "88", "77",
+      "AA", "KK", "QQ", "JJ", "TT", "99", "88", "77", "66", "55", "44", "33", "22",
       "AKs", "AQs", "AJs", "ATs", "A5s", "A4s",
       "KQs", "KJs", "KTs",
       "QJs", "QTs",
@@ -23,10 +34,10 @@
       "98s",
       "87s",
       "76s",
-      "AKo", "AQo", "AJo"
+      "AKo", "AQo", "AJo", "ATo",
+      "KQo"
     ],
     "FOLD": [
-      "66", "55", "44", "33", "22",
       "A9s", "A8s", "A7s", "A6s", "A3s", "A2s",
       "K9s", "K8s", "K7s", "K6s", "K5s", "K4s", "K3s", "K2s",
       "Q9s", "Q8s", "Q7s", "Q6s", "Q5s", "Q4s", "Q3s", "Q2s",
@@ -39,8 +50,8 @@
       "54s", "53s", "52s",
       "43s", "42s",
       "32s",
-      "ATo", "A9o", "A8o", "A7o", "A6o", "A5o", "A4o", "A3o", "A2o",
-      "KQo", "KJo", "KTo", "K9o", "K8o", "K7o", "K6o", "K5o", "K4o", "K3o", "K2o",
+      "A9o", "A8o", "A7o", "A6o", "A5o", "A4o", "A3o", "A2o",
+      "KJo", "KTo", "K9o", "K8o", "K7o", "K6o", "K5o", "K4o", "K3o", "K2o",
       "QJo", "QTo", "Q9o", "Q8o", "Q7o", "Q6o", "Q5o", "Q4o", "Q3o", "Q2o",
       "JTo", "J9o", "J8o", "J7o", "J6o", "J5o", "J4o", "J3o", "J2o",
       "T9o", "T8o", "T7o", "T6o", "T5o", "T4o", "T3o", "T2o",

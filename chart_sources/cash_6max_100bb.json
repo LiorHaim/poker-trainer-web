@@ -1,0 +1,245 @@
+{
+  "_comment": [
+    "Source specs for the charts regenerated in phase 1. Run:",
+    "    python scripts/author_chart.py chart_sources/cash_6max_100bb.json",
+    "Ranges are authored here as specs and expanded into explicit 169-hand lists,",
+    "because hand-writing those lists is how the duplicate and coverage bugs got in.",
+    "Frequencies in the comments are combo-weighted - the convention for range sizes."
+  ],
+  "defaults": {
+    "game_type": "cash",
+    "table_size": 6,
+    "stack_depth": 100,
+    "source": {
+      "type": "authored",
+      "detail": "Hand-authored from standard 6-max 100bb preflop theory. NOT solver output - these are reasonable reference ranges, not an equilibrium. Replace with solver exports when available.",
+      "date": "2026-10-18"
+    }
+  },
+  "charts": [
+    {
+      "chart_id": "cash_6max_100bb_UTG_RFI",
+      "description": "6-Max Cash, 100bb. Folded to Hero in UTG. Open to 2.5bb or fold.",
+      "hero_position": "UTG",
+      "situation": "RFI",
+      "sizings": { "open_bb": 2.5 },
+      "ranges": {
+        "RAISE": "22+, ATs+, A5s-A4s, KTs+, QTs+, JTs, T9s, 98s, 87s, 76s, ATo+, KQo"
+      },
+      "explanations": {
+        "RAISE": "UTG opens into five players, so the range is tight and made of hands that flop well and are rarely dominated. Suited broadways, pairs, and the strong suited wheel aces that can 4-bet bluff later.",
+        "FOLD": "Five players still to act and no position. Hands that are playable on the Button are losers here - the cost of being dominated and out of position outweighs the blinds."
+      }
+    },
+    {
+      "chart_id": "cash_6max_100bb_MP_RFI",
+      "description": "6-Max Cash, 100bb. Folded to Hero in MP. Open to 2.5bb or fold.",
+      "hero_position": "MP",
+      "situation": "RFI",
+      "sizings": { "open_bb": 2.5 },
+      "ranges": {
+        "RAISE": "22+, A9s+, A5s-A2s, K9s+, Q9s+, J9s+, T8s+, 97s+, 87s, 76s, 65s, ATo+, KJo+, QJo"
+      },
+      "explanations": {
+        "RAISE": "One fewer player to get through than UTG, so the suited aces, suited gappers and small suited connectors come in. Still a range built to make hands, not to steal.",
+        "FOLD": "Four players left to act. Offsuit hands without two broadway cards, and weak suited hands that flop one pair and no draw, are not yet profitable opens."
+      }
+    },
+    {
+      "chart_id": "cash_6max_100bb_CO_RFI",
+      "description": "6-Max Cash, 100bb. Folded to Hero in CO. Open to 2.5bb or fold.",
+      "hero_position": "CO",
+      "situation": "RFI",
+      "sizings": { "open_bb": 2.5 },
+      "ranges": {
+        "RAISE": "22+, A2s+, K7s+, Q8s+, J8s+, T8s+, 97s+, 86s+, 75s+, 65s, 54s, A9o+, KTo+, QTo+, JTo"
+      },
+      "explanations": {
+        "RAISE": "Only three players left, two of them blinds, so stealing starts to matter. Every suited ace comes in for the blocker and nut-flush value, along with the suited one-gappers.",
+        "FOLD": "Still two players with position on us. Weak offsuit hands play badly multiway and badly heads-up out of position - folding them is not tight, it is the whole reason the opens that remain are profitable."
+      }
+    },
+    {
+      "chart_id": "cash_6max_100bb_BTN_RFI",
+      "description": "6-Max Cash, 100bb. Folded to Hero on the Button. Open to 2.5bb or fold.",
+      "hero_position": "BTN",
+      "situation": "RFI",
+      "sizings": { "open_bb": 2.5 },
+      "ranges": {
+        "RAISE": "22+, A2s+, K2s+, Q4s+, J6s+, T6s+, 95s+, 85s+, 74s+, 64s+, 53s+, 43s, A2o+, K8o+, Q9o+, J9o+, T9o, 98o"
+      },
+      "explanations": {
+        "RAISE": "The widest opening range at the table, around 45%. Only two players left, both of them blinds, and we have position on both for the rest of the hand. The blinds cannot defend widely enough to stop this being profitable.",
+        "FOLD": "Even on the Button some hands are unplayable - offsuit hands with a low card and no straight potential make no pair, no draw, and no fold equity."
+      }
+    },
+    {
+      "chart_id": "cash_6max_100bb_SB_RFI",
+      "description": "6-Max Cash, 100bb. Folded to Hero in the SB. Open to 3bb or fold (no limping strategy).",
+      "hero_position": "SB",
+      "situation": "RFI",
+      "sizings": { "open_bb": 3.0 },
+      "ranges": {
+        "RAISE": "22+, A2s+, K2s+, Q4s+, J6s+, T6s+, 96s+, 86s+, 75s+, 64s+, 54s, A2o+, K7o+, Q9o+, J9o+, T9o, 98o"
+      },
+      "explanations": {
+        "RAISE": "Heads-up against one player who has to fold often, but we are out of position for the rest of the hand. This chart uses a raise-or-fold strategy and a larger 3bb size to reduce how often BB continues; a mixed limping strategy is a separate approach, not modelled here.",
+        "FOLD": "Out of position against a Big Blind who defends very wide. Hands that cannot make a strong top pair or a real draw lose money even against a single caller."
+      }
+    },
+
+    {
+      "chart_id": "cash_6max_100bb_BB_vs_UTG_RFI",
+      "description": "6-Max Cash, 100bb. UTG opens to 2.5bb, folded to Hero in the BB. 3-bet to 11bb, call 1.5bb more, or fold.",
+      "hero_position": "BB",
+      "situation": "vs_RFI",
+      "villain_position": "UTG",
+      "sizings": { "open_bb": 2.5, "3bet_bb": 11.0 },
+      "ranges": {
+        "RAISE": "QQ+, AKs, AQs, AKo, A5s-A4s, KQs",
+        "DEFEND": "22+, A2s+, K2s+, Q5s+, J7s+, T7s+, 96s+, 86s+, 75s+, 65s, 54s, A7o+, KTo+, QTo+, JTo, T9o"
+      },
+      "explanations": {
+        "RAISE": "UTG's range is strong, so the value 3-bets are narrow - only hands happy to get a lot of money in. The suited wheel aces are the bluffs: they block AA and AK and still flop a draw when called.",
+        "CALL": "We are closing the action getting better than 3-to-1, so a hand only needs to realise a little equity to be worth a call. Suited hands and pairs that can flop a strong draw or set against a strong range.",
+        "FOLD": "Even at a good price, a hand that is dominated when it hits and has no straight or flush potential loses money against the tightest opening range at the table."
+      }
+    },
+    {
+      "chart_id": "cash_6max_100bb_BB_vs_MP_RFI",
+      "description": "6-Max Cash, 100bb. MP opens to 2.5bb, folded to Hero in the BB. 3-bet to 11bb, call 1.5bb more, or fold.",
+      "hero_position": "BB",
+      "situation": "vs_RFI",
+      "villain_position": "MP",
+      "sizings": { "open_bb": 2.5, "3bet_bb": 11.0 },
+      "ranges": {
+        "RAISE": "JJ+, AQs+, AKo, A5s-A3s, KQs, KJs, 76s, 65s",
+        "DEFEND": "22+, A2s+, K2s+, Q2s+, J5s+, T6s+, 95s+, 85s+, 74s+, 64s+, 53s+, A7o+, K9o+, Q9o+, J9o+, T9o, 98o"
+      },
+      "explanations": {
+        "RAISE": "A slightly wider opening range than UTG means slightly wider value, plus suited wheel aces and the two suited connectors that flop best as bluffs.",
+        "CALL": "Closing the action at better than 3-to-1 against a range that still has to fold a lot of flops. Suited hands, connected hands and every pocket pair are clear continues.",
+        "FOLD": "Offsuit hands with one high card are the classic Big Blind leak: they look defensible at a good price, but they are dominated when they hit and have no way to improve when they do not."
+      }
+    },
+    {
+      "chart_id": "cash_6max_100bb_BB_vs_CO_RFI",
+      "description": "6-Max Cash, 100bb. CO opens to 2.5bb, folded to Hero in the BB. 3-bet to 11bb, call 1.5bb more, or fold.",
+      "hero_position": "BB",
+      "situation": "vs_RFI",
+      "villain_position": "CO",
+      "sizings": { "open_bb": 2.5, "3bet_bb": 11.0 },
+      "ranges": {
+        "RAISE": "TT+, AJs+, AQo+, KQs, KJs, QJs, A5s-A2s, K9s, T9s, 98s, 87s, 76s, 65s",
+        "DEFEND": "22+, A2s+, K2s+, Q2s+, J3s+, T5s+, 94s+, 84s+, 74s+, 63s+, 53s+, 43s, A2o+, K9o+, Q9o+, J9o+, T9o, 98o"
+      },
+      "explanations": {
+        "RAISE": "CO opens around 28%, wide enough that we can 3-bet for value with hands that would be behind against UTG. Bluffs are suited wheel aces and suited connectors - hands that block strong continues and flop well when called.",
+        "CALL": "A wide calling range is correct here: we close the action at a great price against a range that misses most flops, and we have the whole hand to outplay them.",
+        "FOLD": "Hands with no suit, no connection, and no high card. These are the only hands that cannot show a profit at this price."
+      }
+    },
+    {
+      "chart_id": "cash_6max_100bb_BB_vs_BTN_RFI",
+      "description": "6-Max Cash, 100bb. BTN opens to 2.5bb, SB folds, Hero is in the BB. 3-bet to 11bb, call 1.5bb more, or fold.",
+      "hero_position": "BB",
+      "situation": "vs_RFI",
+      "villain_position": "BTN",
+      "sizings": { "open_bb": 2.5, "3bet_bb": 11.0 },
+      "ranges": {
+        "RAISE": "99+, AJs+, AJo+, KQs, KJs, QJs, JTs, A5s-A2s, K9s-K7s, Q9s, J9s, T8s, 97s, 86s, 75s, 65s, 54s",
+        "DEFEND": "22+, A2s+, K2s+, Q2s+, J4s+, T5s+, 94s+, 84s+, 74s+, 63s+, 53s+, 43s, A2o+, K5o+, Q8o+, J8o+, T8o+, 97o+, 87o, 76o, 65o"
+      },
+      "explanations": {
+        "RAISE": "The Button opens around 45%, so we 3-bet a wide polarised range: value hands that are ahead of that range, and suited bluffs that block it. Letting a 45% range see a cheap flop in position is the single biggest Big Blind mistake.",
+        "CALL": "Getting 3.5-to-1 closing the action against the widest range at the table. Over half of all hands are a profitable continue here - folding too much is a far bigger leak than calling slightly too wide.",
+        "FOLD": "Only the genuinely unplayable hands: offsuit, disconnected, and low. Everything else has enough equity at this price."
+      }
+    },
+    {
+      "chart_id": "cash_6max_100bb_BB_vs_SB_RFI",
+      "description": "6-Max Cash, 100bb. SB opens to 3bb, Hero is in the BB. 3-bet to 12bb, call 2bb more, or fold.",
+      "hero_position": "BB",
+      "situation": "vs_RFI",
+      "villain_position": "SB",
+      "sizings": { "open_bb": 3.0, "3bet_bb": 12.0 },
+      "ranges": {
+        "RAISE": "88+, ATs+, ATo+, KQs, KJs, KTs, QJs, QTs, JTs, KQo, A9s-A2s, K9s-K6s, Q9s, J9s, T8s, 97s, 86s, 75s, 65s, 54s",
+        "DEFEND": "22+, A2s+, K2s+, Q2s+, J2s+, T4s+, 94s+, 84s+, 73s+, 63s+, 53s+, 43s, A2o+, K2o+, Q5o+, J7o+, T8o+, 97o+, 87o, 76o, 65o, 54o"
+      },
+      "explanations": {
+        "RAISE": "Blind versus blind, heads-up, against the widest range anyone opens. We 3-bet a lot: SB is out of position for the rest of the hand and has to fold or play a big pot without the initiative.",
+        "CALL": "We only need 2bb more to see a flop heads-up in position. Almost any hand with a suit, a connection or a high card continues.",
+        "FOLD": "A very small fold range - the worst offsuit hands only. Against an SB opening this wide, folding is the mistake."
+      }
+    },
+    {
+      "chart_id": "cash_6max_100bb_SB_vs_UTG_RFI",
+      "description": "6-Max Cash, 100bb. UTG opens to 2.5bb, folded to Hero in the SB with the BB still to act. 3-bet to 11bb, call 2bb more, or fold.",
+      "hero_position": "SB",
+      "situation": "vs_RFI",
+      "villain_position": "UTG",
+      "sizings": { "open_bb": 2.5, "3bet_bb": 11.0 },
+      "ranges": {
+        "RAISE": "QQ+, AKs, AQs, AKo, A5s-A4s",
+        "DEFEND": "QQ+, AKs, AQs, AKo, A5s-A4s, JJ-55, AJs, ATs, KQs, KJs, KTs, QJs, QTs, JTs, T9s, 98s"
+      },
+      "explanations": {
+        "RAISE": "Out of position with the Big Blind still behind, so the strategy is mostly 3-bet or fold. Value is narrow against UTG, with the suited wheel aces as the blocker bluffs.",
+        "CALL": "A small calling range only: hands strong enough to play a multiway pot out of position, since calling invites the Big Blind in behind us at a great price.",
+        "FOLD": "Everything else. Cold-calling out of position with the Big Blind left to act is the worst spot in the game - most hands that would call in the BB must fold here."
+      }
+    },
+    {
+      "chart_id": "cash_6max_100bb_SB_vs_MP_RFI",
+      "description": "6-Max Cash, 100bb. MP opens to 2.5bb, folded to Hero in the SB with the BB still to act. 3-bet to 11bb, call 2bb more, or fold.",
+      "hero_position": "SB",
+      "situation": "vs_RFI",
+      "villain_position": "MP",
+      "sizings": { "open_bb": 2.5, "3bet_bb": 11.0 },
+      "ranges": {
+        "RAISE": "JJ+, AQs+, AKo, A5s-A3s, KQs",
+        "DEFEND": "JJ+, AQs+, AKo, A5s-A3s, KQs, TT-44, AJs, ATs, A9s, KJs, KTs, K9s, QJs, QTs, JTs, J9s, T9s, 98s, 87s, AQo, AJo"
+      },
+      "explanations": {
+        "RAISE": "Still out of position with the Big Blind behind, so still mostly 3-bet or fold, but MP's wider range lets us add a value hand and another wheel ace bluff.",
+        "CALL": "Pairs and suited broadways that can flop strongly enough to justify playing out of position in a pot the Big Blind may join.",
+        "FOLD": "Most hands. The price looks good, but the Big Blind behind and a full hand out of position make it a trap."
+      }
+    },
+    {
+      "chart_id": "cash_6max_100bb_SB_vs_CO_RFI",
+      "description": "6-Max Cash, 100bb. CO opens to 2.5bb, folded to Hero in the SB with the BB still to act. 3-bet to 11bb, call 2bb more, or fold.",
+      "hero_position": "SB",
+      "situation": "vs_RFI",
+      "villain_position": "CO",
+      "sizings": { "open_bb": 2.5, "3bet_bb": 11.0 },
+      "ranges": {
+        "RAISE": "TT+, AJs+, AQo+, KQs, KJs, A5s-A2s, QJs, JTs, T9s, 98s",
+        "DEFEND": "TT+, AJs+, AQo+, KQs, KJs, A5s-A2s, QJs, JTs, T9s, 98s, 99-22, ATs, A9s-A6s, KTs, K9s, QTs, Q9s, J9s, T8s, 87s, 76s, AJo, ATo, KQo"
+      },
+      "explanations": {
+        "RAISE": "Against a 28% opening range we can 3-bet for value considerably wider, and the suited wheel aces plus suited connectors make up the bluffing half.",
+        "CALL": "A deliberately small flatting range. With the Big Blind behind, most of our continues should take the initiative rather than invite a multiway pot.",
+        "FOLD": "Out of position, with another player behind, against a range that still has plenty of strong hands in it."
+      }
+    },
+    {
+      "chart_id": "cash_6max_100bb_SB_vs_BTN_RFI",
+      "description": "6-Max Cash, 100bb. BTN opens to 2.5bb, Hero is in the SB with the BB still to act. 3-bet to 11bb, call 2bb more, or fold.",
+      "hero_position": "SB",
+      "situation": "vs_RFI",
+      "villain_position": "BTN",
+      "sizings": { "open_bb": 2.5, "3bet_bb": 11.0 },
+      "ranges": {
+        "RAISE": "88+, ATs+, AJo+, KQs, KJs, KTs, QJs, QTs, JTs, KQo, A9s-A2s, K9s, Q9s, J9s, T9s, 98s, 87s, 76s, 65s",
+        "DEFEND": "88+, ATs+, AJo+, KQs, KJs, KTs, QJs, QTs, JTs, KQo, A9s-A2s, K9s, Q9s, J9s, T9s, 98s, 87s, 76s, 65s, 77-22, K8s-K2s, Q8s-Q6s, J8s, J7s, T8s, T7s, 97s, 86s, 54s, ATo, KJo, KTo, QJo, JTo"
+      },
+      "explanations": {
+        "RAISE": "The Button's 45% opening range is the widest we face, so this is the widest 3-betting range we have. Out of position with the BB behind, taking the pot down now or playing with the initiative is worth far more than flatting.",
+        "CALL": "A small set of hands that flop well enough to defend without 3-betting. Everything else that continues should raise.",
+        "FOLD": "Wide as the Button's range is, calling out of position with the Big Blind still to act needs a real hand. Fold the rest rather than flat them."
+      }
+    }
+  ]
+}

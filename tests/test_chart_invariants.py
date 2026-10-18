@@ -25,6 +25,7 @@ from logic.chart_schema import (
     POSITIONS,
     SITUATION_REQUIREMENTS,
     apply_baseline,
+    combo_frequency,
     continuing_hands,
     decision_node_id,
     load_baseline,
@@ -57,14 +58,14 @@ def chart_files():
 
 
 def pct(hands) -> float:
-    """Share of the 169 hand classes. Not combo-weighted - these are class counts."""
-    return 100.0 * len(hands) / TOTAL_HANDS
+    """Combo-weighted share of the deck - the unit range frequencies are quoted in."""
+    return combo_frequency(hands)
 
 
 # --- Structural -------------------------------------------------------------
 
 def test_charts_are_present():
-    assert len(chart_files()) >= 52
+    assert len(chart_files()) >= 43
 
 
 def test_no_unexpected_validation_errors(issues):
@@ -126,29 +127,13 @@ def test_chart_ids_are_unique(charts):
 
 # --- Strategic: opening ranges ----------------------------------------------
 
-def _phase1_range_fix(reason):
-    return pytest.mark.xfail(strict=True, reason=f"phase-1: {reason}")
-
-
-#: (position, min%, max%) of the 169 hand classes opened when folded to.
+#: (position, min%, max%) of the deck opened when folded to, combo-weighted.
 RFI_BANDS = [
-    ("UTG", 13.0, 20.0),
-    ("MP", 18.0, 26.0),
-    pytest.param("CO", 24.0, 33.0, marks=_phase1_range_fix("CO opens 40.2%, around 10 points too wide")),
-    pytest.param(
-        "BTN",
-        42.0,
-        52.0,
-        marks=_phase1_range_fix(
-            "BTN opens 34.3% while its own explanation text claims 45-50%"
-        ),
-    ),
-    pytest.param(
-        "SB",
-        38.0,
-        50.0,
-        marks=_phase1_range_fix("SB opens 53.8% as a pure raise, with no limp branch"),
-    ),
+    ("UTG", 13.0, 19.0),
+    ("MP", 17.0, 24.0),
+    ("CO", 24.0, 31.0),
+    ("BTN", 41.0, 50.0),
+    ("SB", 38.0, 48.0),
 ]
 
 
@@ -167,10 +152,6 @@ def test_rfi_frequency_in_band(charts, position, low, high):
     assert low <= frequency <= high, f"{key} opens {frequency:.1f}%, expected {low}-{high}%"
 
 
-@pytest.mark.xfail(
-    strict=True,
-    reason="phase-1: CO currently opens wider than BTN, inverting the two most important seats",
-)
 def test_rfi_widens_with_position(charts):
     order = ["UTG", "MP", "CO", "BTN"]
     frequencies = [pct(raising_hands(rfi_chart(charts, p)[1])) for p in order]
@@ -181,22 +162,21 @@ def test_rfi_widens_with_position(charts):
 # --- Strategic: blind defense -----------------------------------------------
 
 #: (hero, villain, min defend%) - BB closes the action getting a price, so it
-#: defends far wider than the charts currently do.
+#: defends far wider against the late positions that open widest.
 DEFENSE_FLOORS = [
     ("BB", "BTN", 50.0),
-    ("BB", "CO", 40.0),
-    ("BB", "MP", 33.0),
-    ("BB", "UTG", 30.0),
+    ("BB", "CO", 42.0),
+    ("BB", "MP", 36.0),
+    ("BB", "UTG", 32.0),
 ]
 
 
 @pytest.mark.parametrize("hero,villain,floor", DEFENSE_FLOORS)
-@pytest.mark.xfail(strict=True, reason="phase-1: BB defense is 10-20 points too tight at every node")
 def test_blind_defends_wide_enough(charts, hero, villain, floor):
     matches = [
         (key, data)
         for key, data in charts.items()
-        if data["metadata"]["situation"] in ("vs_RFI", "3Bet")
+        if data["metadata"]["situation"] == "vs_RFI"
         and data["metadata"]["hero_position"] == hero
         and data["metadata"].get("villain_position") == villain
     ]
@@ -208,10 +188,6 @@ def test_blind_defends_wide_enough(charts, hero, villain, floor):
 
 # --- Strategic: tree consistency --------------------------------------------
 
-@pytest.mark.xfail(
-    strict=True,
-    reason="phase-1: the '*_vs_*_RFI' and '*_3Bet_vs_*' families model the same node and disagree",
-)
 def test_each_decision_node_has_exactly_one_chart(charts):
     by_node = {}
     for key, data in charts.items():
@@ -220,10 +196,6 @@ def test_each_decision_node_has_exactly_one_chart(charts):
     assert not duplicates, "\n".join(f"{node}: {sorted(keys)}" for node, keys in duplicates.items())
 
 
-@pytest.mark.xfail(
-    strict=True,
-    reason="phase-1: BTN continues vs a BB 3-bet with four hands it never opens",
-)
 def test_continuing_ranges_are_reachable(charts):
     opened = {
         data["metadata"]["hero_position"]: raising_hands(data)

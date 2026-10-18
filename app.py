@@ -140,9 +140,6 @@ def generate_scenario(available_scenarios):
                 PreflopAction(position=opener_pos, action=Action.RAISE, size_bb=3.0),
                 PreflopAction(position=caller_pos, action=Action.CALL, size_bb=3.0)
             ]
-        elif situation == "3Bet":
-            villain_pos = Position(scenario_meta["villain_position"])
-            actions_before_hero = [PreflopAction(position=villain_pos, action=Action.RAISE, size_bb=3.0)]
     except (KeyError, ValueError):
         situation = "RFI"
         actions_before_hero = []

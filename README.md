@@ -6,7 +6,7 @@ Built with Flask, MongoDB, and a lo-fi themed frontend.
 
 ## Features
 
-- **52 Strategy Charts** — covers all key 6-Max 100BB spots: RFI, vs RFI, 3-Bet, vs 3-Bet, vs 4-Bet, and Squeeze
+- **43 Strategy Charts** — covers all key 6-Max 100BB spots: RFI, vs RFI (including 3-betting), vs 3-Bet, vs 4-Bet, and Squeeze
 - **Drill Mode** — continuous random hands across all loaded charts
 - **Focus Mode** — practice a specific position or situation (e.g. "only BTN spots")
 - **Instant Feedback** — see whether your action matches the reference strategy, with a coaching explanation
@@ -24,10 +24,18 @@ All charts are for **Cash Game, 6-Max, 100BB effective stacks**:
 |------|--------|
 | RFI (open raise) | UTG, MP, CO, BTN, SB |
 | vs RFI (facing open) | BB vs all positions, SB vs BTN/CO/MP/UTG, BTN vs UTG/MP/CO, CO vs UTG/MP |
-| 3-Bet | SB & BB 3-bet vs all openers |
 | vs 3-Bet | UTG/MP/CO/BTN vs various 3-bettors |
 | vs 4-Bet | UTG/MP/CO/SB facing 4-bets |
 | Squeeze | SB & BB squeeze vs opener+caller combos |
+
+Facing an open is a single chart per spot whose RAISE branch is the 3-bet.
+There used to be a second `3Bet` chart family describing the same decision with
+conflicting answers; it was removed.
+
+Opening and blind-defense ranges are generated from the range specs in
+[`chart_sources/`](chart_sources/) — see "Authoring a chart" in the schema docs.
+They are hand-authored reference ranges, recorded as `metadata.source.type:
+"authored"`, not solver output.
 
 Chart files are validated against a schema at startup and in CI — see
 [`docs/CHART_SCHEMA.md`](docs/CHART_SCHEMA.md) for the format and
@@ -43,15 +51,18 @@ it. Progress:
 | Phase | Work | Status |
 |---|---|---|
 | 0 | Chart schema, validation, invariant tests, CI | done |
-| 1 | Collapse duplicate decision nodes; retune CO/BTN/SB opens and blind defense; wire per-chart sizings | next |
+| 1 | Collapse duplicate decision nodes; retune opening and blind-defense ranges | done |
+| 1b | Wire per-chart sizings; fix vs-4-bet semantics; delete dead `logic/trainer.py` | in progress |
 | 2 | Deal hands only from ranges that can reach the node | planned |
 | 3 | Mixed-frequency charts and EV-loss scoring | planned |
 | 4 | Stateless scenario tokens, blueprints, rollup stats | planned |
 | 5 | Frontend rebuild | planned |
 
-Known strategic gaps are tracked as `xfail` tests in
-`tests/test_chart_invariants.py`, so each one turns into a build failure the
-moment it is fixed and the marker goes stale.
+Range frequencies are asserted against reference bands in
+`tests/test_chart_invariants.py`, so a chart cannot drift back out of range
+unnoticed. Strategic gaps still outstanding are tracked there as `xfail` tests,
+which turn into build failures the moment they are fixed and the marker is
+stale.
 
 ## Tech Stack
 

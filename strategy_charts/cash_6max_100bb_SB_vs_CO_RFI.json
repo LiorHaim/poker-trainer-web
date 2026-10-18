@@ -1,47 +1,68 @@
 {
   "metadata": {
     "chart_id": "cash_6max_100bb_SB_vs_CO_RFI",
-    "description": "6-Max Cash Game, 100bb deep. Hero is in Small Blind (SB) and faces a 2.5-3BB raise from Cutoff (CO).",
+    "description": "6-Max Cash, 100bb. CO opens to 2.5bb, folded to Hero in the SB with the BB still to act. 3-bet to 11bb, call 2bb more, or fold.",
     "game_type": "cash",
     "table_size": 6,
     "stack_depth": 100,
     "hero_position": "SB",
     "situation": "vs_RFI",
     "villain_position": "CO",
+    "sizings": {
+      "open_bb": 2.5,
+      "3bet_bb": 11.0
+    },
+    "source": {
+      "type": "authored",
+      "detail": "Hand-authored from standard 6-max 100bb preflop theory. NOT solver output - these are reasonable reference ranges, not an equilibrium. Replace with solver exports when available.",
+      "date": "2026-10-18",
+      "spec": {
+        "RAISE": "TT+, AJs+, AQo+, KQs, KJs, A5s-A2s, QJs, JTs, T9s, 98s",
+        "DEFEND": "TT+, AJs+, AQo+, KQs, KJs, A5s-A2s, QJs, JTs, T9s, 98s, 99-22, ATs, A9s-A6s, KTs, K9s, QTs, Q9s, J9s, T8s, 87s, 76s, AJo, ATo, KQo"
+      }
+    },
     "explanations": {
-      "RAISE": "3-Bet linear value and bluffs. Against CO, we can 3-bet for value with a strong range and mix in some suited connectors/blockers.",
-      "CALL": "Flatting from SB is generally not recommended in high rake environments, but some strategies allow it with pocket pairs or strong suited broadways.",
-      "FOLD": "Fold weak hands. Being out of position is a major disadvantage."
+      "RAISE": "Against a 28% opening range we can 3-bet for value considerably wider, and the suited wheel aces plus suited connectors make up the bluffing half.",
+      "CALL": "A deliberately small flatting range. With the Big Blind behind, most of our continues should take the initiative rather than invite a multiway pot.",
+      "FOLD": "Out of position, with another player behind, against a range that still has plenty of strong hands in it."
     }
   },
   "actions": {
     "RAISE": [
-      "AA", "KK", "QQ", "JJ", "TT", "99",
-      "AKs", "AQs", "AJs", "ATs", "A5s", "A4s",
-      "KQs", "KJs", "KTs",
-      "QJs", "QTs",
+      "AA", "KK", "QQ", "JJ", "TT",
+      "AKs", "AQs", "AJs", "A5s", "A4s", "A3s", "A2s",
+      "KQs", "KJs",
+      "QJs",
       "JTs",
-      "AKo", "AQo", "AJo", "KQo"
+      "T9s",
+      "98s",
+      "AKo", "AQo"
     ],
     "CALL": [
-      "88", "77", "66", "55",
-      "T9s", "98s", "87s"
+      "99", "88", "77", "66", "55", "44", "33", "22",
+      "ATs", "A9s", "A8s", "A7s", "A6s",
+      "KTs", "K9s",
+      "QTs", "Q9s",
+      "J9s",
+      "T8s",
+      "87s",
+      "76s",
+      "AJo", "ATo",
+      "KQo"
     ],
     "FOLD": [
-      "44", "33", "22",
-      "A9s", "A8s", "A7s", "A6s", "A3s", "A2s",
-      "K9s", "K8s", "K7s", "K6s", "K5s", "K4s", "K3s", "K2s",
-      "Q9s", "Q8s", "Q7s", "Q6s", "Q5s", "Q4s", "Q3s", "Q2s",
-      "J9s", "J8s", "J7s", "J6s", "J5s", "J4s", "J3s", "J2s",
-      "T8s", "T7s", "T6s", "T5s", "T4s", "T3s", "T2s",
+      "K8s", "K7s", "K6s", "K5s", "K4s", "K3s", "K2s",
+      "Q8s", "Q7s", "Q6s", "Q5s", "Q4s", "Q3s", "Q2s",
+      "J8s", "J7s", "J6s", "J5s", "J4s", "J3s", "J2s",
+      "T7s", "T6s", "T5s", "T4s", "T3s", "T2s",
       "97s", "96s", "95s", "94s", "93s", "92s",
       "86s", "85s", "84s", "83s", "82s",
-      "76s", "75s", "74s", "73s", "72s",
+      "75s", "74s", "73s", "72s",
       "65s", "64s", "63s", "62s",
       "54s", "53s", "52s",
       "43s", "42s",
       "32s",
-      "ATo", "A9o", "A8o", "A7o", "A6o", "A5o", "A4o", "A3o", "A2o",
+      "A9o", "A8o", "A7o", "A6o", "A5o", "A4o", "A3o", "A2o",
       "KJo", "KTo", "K9o", "K8o", "K7o", "K6o", "K5o", "K4o", "K3o", "K2o",
       "QJo", "QTo", "Q9o", "Q8o", "Q7o", "Q6o", "Q5o", "Q4o", "Q3o", "Q2o",
       "JTo", "J9o", "J8o", "J7o", "J6o", "J5o", "J4o", "J3o", "J2o",

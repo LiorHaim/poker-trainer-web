@@ -1,22 +1,33 @@
 {
   "metadata": {
     "chart_id": "cash_6max_100bb_CO_RFI",
-    "description": "6-Max Cash Game, 100bb deep. Hero is in the Cutoff (CO) and it has folded to them (Raise First In).",
+    "description": "6-Max Cash, 100bb. Folded to Hero in CO. Open to 2.5bb or fold.",
     "game_type": "cash",
     "table_size": 6,
     "stack_depth": 100,
     "hero_position": "CO",
     "situation": "RFI",
+    "sizings": {
+      "open_bb": 2.5
+    },
+    "source": {
+      "type": "authored",
+      "detail": "Hand-authored from standard 6-max 100bb preflop theory. NOT solver output - these are reasonable reference ranges, not an equilibrium. Replace with solver exports when available.",
+      "date": "2026-10-18",
+      "spec": {
+        "RAISE": "22+, A2s+, K7s+, Q8s+, J8s+, T8s+, 97s+, 86s+, 75s+, 65s, 54s, A9o+, KTo+, QTo+, JTo"
+      }
+    },
     "explanations": {
-      "RAISE": "From the CO, we're opening a wider range (~27-30%) to attack the Button and Blinds. This hand is a standard open-raise.",
-      "FOLD": "This hand is just outside our CO opening range. It's a bit too weak to play profitably when the Button and Blinds can 3-bet us."
+      "RAISE": "Only three players left, two of them blinds, so stealing starts to matter. Every suited ace comes in for the blocker and nut-flush value, along with the suited one-gappers.",
+      "FOLD": "Still two players with position on us. Weak offsuit hands play badly multiway and badly heads-up out of position - folding them is not tight, it is the whole reason the opens that remain are profitable."
     }
   },
   "actions": {
     "RAISE": [
       "AA", "KK", "QQ", "JJ", "TT", "99", "88", "77", "66", "55", "44", "33", "22",
       "AKs", "AQs", "AJs", "ATs", "A9s", "A8s", "A7s", "A6s", "A5s", "A4s", "A3s", "A2s",
-      "KQs", "KJs", "KTs", "K9s", "K8s", "K7s", "K6s", "K5s",
+      "KQs", "KJs", "KTs", "K9s", "K8s", "K7s",
       "QJs", "QTs", "Q9s", "Q8s",
       "JTs", "J9s", "J8s",
       "T9s", "T8s",
@@ -25,14 +36,13 @@
       "76s", "75s",
       "65s",
       "54s",
-      "AKo", "AQo", "AJo", "ATo", "A9o", "A8o", "A7o", "A6o", "A5o",
-      "KQo", "KJo", "KTo", "K9o",
+      "AKo", "AQo", "AJo", "ATo", "A9o",
+      "KQo", "KJo", "KTo",
       "QJo", "QTo",
-      "JTo", "J9o",
-      "T9o"
+      "JTo"
     ],
     "FOLD": [
-      "K4s", "K3s", "K2s",
+      "K6s", "K5s", "K4s", "K3s", "K2s",
       "Q7s", "Q6s", "Q5s", "Q4s", "Q3s", "Q2s",
       "J7s", "J6s", "J5s", "J4s", "J3s", "J2s",
       "T7s", "T6s", "T5s", "T4s", "T3s", "T2s",
@@ -43,11 +53,11 @@
       "53s", "52s",
       "43s", "42s",
       "32s",
-      "A4o", "A3o", "A2o",
-      "K8o", "K7o", "K6o", "K5o", "K4o", "K3o", "K2o",
+      "A8o", "A7o", "A6o", "A5o", "A4o", "A3o", "A2o",
+      "K9o", "K8o", "K7o", "K6o", "K5o", "K4o", "K3o", "K2o",
       "Q9o", "Q8o", "Q7o", "Q6o", "Q5o", "Q4o", "Q3o", "Q2o",
-      "J8o", "J7o", "J6o", "J5o", "J4o", "J3o", "J2o",
-      "T8o", "T7o", "T6o", "T5o", "T4o", "T3o", "T2o",
+      "J9o", "J8o", "J7o", "J6o", "J5o", "J4o", "J3o", "J2o",
+      "T9o", "T8o", "T7o", "T6o", "T5o", "T4o", "T3o", "T2o",
       "98o", "97o", "96o", "95o", "94o", "93o", "92o",
       "87o", "86o", "85o", "84o", "83o", "82o",
       "76o", "75o", "74o", "73o", "72o",

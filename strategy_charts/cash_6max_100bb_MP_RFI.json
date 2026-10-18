@@ -1,39 +1,51 @@
 {
   "metadata": {
     "chart_id": "cash_6max_100bb_MP_RFI",
-    "description": "6-Max Cash Game, 100bb deep. Hero is in Middle Position (MP) and it has folded to them (Raise First In).",
+    "description": "6-Max Cash, 100bb. Folded to Hero in MP. Open to 2.5bb or fold.",
     "game_type": "cash",
     "table_size": 6,
     "stack_depth": 100,
     "hero_position": "MP",
     "situation": "RFI",
+    "sizings": {
+      "open_bb": 2.5
+    },
+    "source": {
+      "type": "authored",
+      "detail": "Hand-authored from standard 6-max 100bb preflop theory. NOT solver output - these are reasonable reference ranges, not an equilibrium. Replace with solver exports when available.",
+      "date": "2026-10-18",
+      "spec": {
+        "RAISE": "22+, A9s+, A5s-A2s, K9s+, Q9s+, J9s+, T8s+, 97s+, 87s, 76s, 65s, ATo+, KJo+, QJo"
+      }
+    },
     "explanations": {
-      "RAISE": "From MP, we play a tight, strong range (~20%). This hand is a clear open-raise for value.",
-      "FOLD": "This hand is not strong enough to open from MP. We're out of position against 3 players, including the Button. This is a fold."
+      "RAISE": "One fewer player to get through than UTG, so the suited aces, suited gappers and small suited connectors come in. Still a range built to make hands, not to steal.",
+      "FOLD": "Four players left to act. Offsuit hands without two broadway cards, and weak suited hands that flop one pair and no draw, are not yet profitable opens."
     }
   },
   "actions": {
     "RAISE": [
-      "AA", "KK", "QQ", "JJ", "TT", "99", "88", "77", "66", "55",
-      "AKs", "AQs", "AJs", "ATs", "A9s", "A8s", "A7s", "A6s", "A5s",
+      "AA", "KK", "QQ", "JJ", "TT", "99", "88", "77", "66", "55", "44", "33", "22",
+      "AKs", "AQs", "AJs", "ATs", "A9s", "A5s", "A4s", "A3s", "A2s",
       "KQs", "KJs", "KTs", "K9s",
-      "QJs", "QTs",
+      "QJs", "QTs", "Q9s",
       "JTs", "J9s",
       "T9s", "T8s",
-      "98s",
+      "98s", "97s",
       "87s",
-      "76s", "65s",
+      "76s",
+      "65s",
       "AKo", "AQo", "AJo", "ATo",
-      "KQo"
+      "KQo", "KJo",
+      "QJo"
     ],
     "FOLD": [
-      "44", "33", "22",
-      "A4s", "A3s", "A2s",
+      "A8s", "A7s", "A6s",
       "K8s", "K7s", "K6s", "K5s", "K4s", "K3s", "K2s",
-      "Q9s", "Q8s", "Q7s", "Q6s", "Q5s", "Q4s", "Q3s", "Q2s",
+      "Q8s", "Q7s", "Q6s", "Q5s", "Q4s", "Q3s", "Q2s",
       "J8s", "J7s", "J6s", "J5s", "J4s", "J3s", "J2s",
       "T7s", "T6s", "T5s", "T4s", "T3s", "T2s",
-      "97s", "96s", "95s", "94s", "93s", "92s",
+      "96s", "95s", "94s", "93s", "92s",
       "86s", "85s", "84s", "83s", "82s",
       "75s", "74s", "73s", "72s",
       "64s", "63s", "62s",
@@ -41,8 +53,8 @@
       "43s", "42s",
       "32s",
       "A9o", "A8o", "A7o", "A6o", "A5o", "A4o", "A3o", "A2o",
-      "KJo", "KTo", "K9o", "K8o", "K7o", "K6o", "K5o", "K4o", "K3o", "K2o",
-      "QJo", "QTo", "Q9o", "Q8o", "Q7o", "Q6o", "Q5o", "Q4o", "Q3o", "Q2o",
+      "KTo", "K9o", "K8o", "K7o", "K6o", "K5o", "K4o", "K3o", "K2o",
+      "QTo", "Q9o", "Q8o", "Q7o", "Q6o", "Q5o", "Q4o", "Q3o", "Q2o",
       "JTo", "J9o", "J8o", "J7o", "J6o", "J5o", "J4o", "J3o", "J2o",
       "T9o", "T8o", "T7o", "T6o", "T5o", "T4o", "T3o", "T2o",
       "98o", "97o", "96o", "95o", "94o", "93o", "92o",

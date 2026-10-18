@@ -154,17 +154,18 @@ def test_rejects_non_object_chart():
 
 # --- Cross-chart checks -----------------------------------------------------
 
-def test_vs_rfi_and_3bet_are_the_same_node():
-    """The two families the repo ships for nine spots must collide, or the check is useless."""
-    facing = decision_node_id(
-        {"game_type": "cash", "table_size": 6, "stack_depth": 100,
-         "hero_position": "BB", "situation": "vs_RFI", "villain_position": "BTN"}
+def test_three_bet_is_no_longer_a_separate_situation():
+    """
+    `3Bet` described the same decision as `vs_RFI` and shipped as a second chart
+    per spot with conflicting answers. Phase 1 removed it; a chart that still
+    uses it must be rejected rather than quietly loaded.
+    """
+    from logic.chart_schema import SITUATIONS
+
+    assert "3Bet" not in SITUATIONS
+    assert "bad-situation" in codes(
+        validate_chart("cash_6max_100bb_BTN_RFI", good_chart(situation="3Bet")), ERROR
     )
-    three_bet = decision_node_id(
-        {"game_type": "cash", "table_size": 6, "stack_depth": 100,
-         "hero_position": "BB", "situation": "3Bet", "villain_position": "BTN"}
-    )
-    assert facing == three_bet
 
 
 def test_different_villains_are_different_nodes():
@@ -178,7 +179,7 @@ def test_different_villains_are_different_nodes():
 def test_detects_duplicate_node():
     charts = {
         "a": good_chart(chart_id="a", situation="vs_RFI", villain_position="CO"),
-        "b": good_chart(chart_id="b", situation="3Bet", villain_position="CO"),
+        "b": good_chart(chart_id="b", situation="vs_RFI", villain_position="CO"),
     }
     assert "duplicate-node" in codes(validate_chart_set(charts), ERROR)
 

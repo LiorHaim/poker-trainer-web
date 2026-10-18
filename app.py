@@ -8,9 +8,9 @@ from collections import defaultdict
 
 from flask import Flask, jsonify, request, send_from_directory, session
 
-from logic import session_token
+from logic import review, session_token
 from logic.nodes import build_scenario
-from logic.scenario import Action, Hand, TrainingResult
+from logic.scenario import Action, Hand, TrainingResult, random_hand_of
 from logic.statistics_db import StatisticsManagerDB
 from logic.strategy import StrategyManager
 
@@ -380,13 +380,35 @@ def _normalised_settings(raw):
     return settings
 
 
+def _review_scenario(username, available):
+    """
+    Pull a spot the user has got wrong before and is due to see again.
+
+    Returns None most of the time: a drill made entirely of past mistakes stops
+    resembling poker, and the point is to meet the spot in context.
+    """
+    if random.random() > review.REVIEW_SHARE:
+        return None
+
+    playable = {meta["chart_key"]: meta for meta in available}
+    for item in stats_mgr.get_due_reviews(username):
+        meta = playable.get(item.chart_key)
+        if meta is None:
+            continue  # outside the current filters
+        try:
+            return build_scenario(meta, random_hand_of(item.hand), item.chart_key)
+        except ValueError:
+            logger.warning("Review item %s/%s is no longer playable", item.chart_key, item.hand)
+    return None
+
+
 def _issue_scenario(username, settings):
     """Pick a scenario and hand the client a signed token describing it."""
     available = filter_scenarios(settings)
     if not available:
         return None, None
 
-    scenario = generate_scenario(available)
+    scenario = _review_scenario(username, available) or generate_scenario(available)
     if not scenario:
         return None, None
 
@@ -523,7 +545,11 @@ def get_stats():
         return jsonify({
             "overall": stats_mgr.get_overall_accuracy(u),
             "by_pos": stats_mgr.get_accuracy_by_position(u),
-            "by_stack": stats_mgr.get_accuracy_by_stack(u),
+            # Accuracy by stack depth was always a single row, since every
+            # chart in the set is 100bb. Weakest nodes is the useful cut.
+            "by_chart": stats_mgr.get_accuracy_by_chart(u),
+            "worst_hands": stats_mgr.get_worst_hands(u),
+            "review_queue": stats_mgr.count_tracked_reviews(u),
             "history": stats_mgr.get_recent_history(u)
         })
     except Exception as e:

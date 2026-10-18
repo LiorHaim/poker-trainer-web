@@ -484,6 +484,27 @@ structural work with no user-visible benefit today, and adding a toolchain chang
 deployed — worth doing when the EV display of phase 3 needs real components. Browser tests are likewise
 run by hand rather than in CI, which would need a server and a browser in the pipeline.
 
+### Phase 6 — done (adaptive drilling)
+
+§S3.3 and the leak dashboard from §4.4, both built entirely on data the app was already recording and
+throwing away.
+
+- **Spaced repetition (`logic/review.py`).** Miss a spot and it is scheduled to come back; get it right
+  repeatedly and the interval grows until it retires. Intervals are counted in hands rather than days,
+  because a session is measured in hands and a drill you will see again in six days is a drill you will not
+  see. A lapse steps back two levels rather than resetting, so a hand you mostly know does not flood the
+  session. 35% of hands come from the queue when anything is due — a drill made only of past mistakes
+  stops resembling poker.
+- **Measured end to end.** 120 hands played deliberately badly: random drilling produced 17 repeats and
+  left 34 spots queued; adaptive produced 47 repeats and cleared down to 21, because missed spots actually
+  get revisited and retired instead of accumulating.
+- **Leak reporting.** "Accuracy by stack depth" grouped on a field that is 100 for every chart in the set,
+  so that panel could only ever show one row. It is replaced by weakest decision nodes (with a minimum
+  sample, since three hands at 0% is noise) and the hand classes most often misplayed.
+- **`statistics_db` now has tests.** It holds the scoring, the leaderboard and the review schedule, and had
+  none. The integration tests also run against the real store on an in-memory MongoDB rather than a
+  hand-written fake — that fake had already drifted out of step with the interface the app calls.
+
 ### Appendix — audit scripts
 
 The throwaway scripts used to produce the tables in Part 1 are now superseded by

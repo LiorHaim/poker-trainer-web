@@ -3,6 +3,8 @@ import logging
 from pymongo import MongoClient
 from werkzeug.security import check_password_hash, generate_password_hash
 
+from .review import ReviewItem, due_items
+
 logger = logging.getLogger(__name__)
 
 # --- Scoring ---
@@ -27,6 +29,8 @@ class StatisticsManagerDB:
             #: Running per-user counts, so a bankroll is a point read rather
             #: than an aggregation over the user's whole history on every hand.
             self.totals = self.db.totals
+            #: Spaced-repetition schedule, one document per (user, chart, hand).
+            self.reviews = self.db.reviews
 
             # Create indexes for better query performance
             self._create_indexes()
@@ -46,6 +50,8 @@ class StatisticsManagerDB:
             self.users.create_index("username", unique=True)
             # Running totals, one document per user.
             self.totals.create_index("username", unique=True)
+            self.reviews.create_index([("username", 1), ("chart", 1), ("hand", 1)], unique=True)
+            self.reviews.create_index([("username", 1), ("due_at", 1)])
             logger.info("Database indexes created successfully")
         except Exception as e:
             logger.warning(f"Error creating indexes (may already exist): {e}")
@@ -95,9 +101,77 @@ class StatisticsManagerDB:
                 {"$inc": {"total": 1, "correct": 1 if result.is_correct else 0}},
                 upsert=True,
             )
+            self._reschedule(result, username)
         except Exception as e:
             logger.error(f"Error logging decision: {e}", exc_info=True)
             # Don't raise - we don't want to break the game flow if logging fails
+
+    # --- Spaced repetition ---
+    def _reschedule(self, result, username):
+        """
+        Update the review schedule for the spot just played.
+
+        A miss starts tracking it; a hit pushes it further out, and once it has
+        been right enough times in a row it stops being tracked at all.
+        """
+        chart = result.scenario.chart_key
+        hand = result.scenario.hero_hand.range_notation
+        key = {"username": username, "chart": chart, "hand": hand}
+        try:
+            hands_played = self._hands_played(username)
+            existing = self.reviews.find_one(key)
+
+            if existing is None:
+                if result.is_correct:
+                    return  # nothing to learn from a spot already played right
+                item = ReviewItem.first_miss(chart, hand, hands_played)
+            else:
+                item = ReviewItem(
+                    chart_key=chart,
+                    hand=hand,
+                    streak=existing.get("streak", 0),
+                    due_at=existing.get("due_at", 0),
+                ).next_after(result.is_correct, hands_played)
+
+                if item.is_retired():
+                    self.reviews.delete_one(key)
+                    return
+
+            self.reviews.update_one(
+                key, {"$set": {"streak": item.streak, "due_at": item.due_at}}, upsert=True
+            )
+        except Exception as e:
+            logger.error(f"Error updating review schedule: {e}", exc_info=True)
+
+    def _hands_played(self, username):
+        totals = self.totals.find_one({"username": username}) or {}
+        return totals.get("total", 0)
+
+    def get_due_reviews(self, username, limit=50):
+        """Spots scheduled to come back, most overdue first."""
+        try:
+            hands_played = self._hands_played(username)
+            cursor = self.reviews.find({"username": username, "due_at": {"$lte": hands_played}})
+            items = [
+                ReviewItem(
+                    chart_key=doc["chart"],
+                    hand=doc["hand"],
+                    streak=doc.get("streak", 0),
+                    due_at=doc.get("due_at", 0),
+                )
+                for doc in cursor.limit(limit)
+            ]
+            return due_items(items, hands_played)
+        except Exception as e:
+            logger.error(f"Error reading review queue: {e}", exc_info=True)
+            return []
+
+    def count_tracked_reviews(self, username):
+        try:
+            return self.reviews.count_documents({"username": username})
+        except Exception as e:
+            logger.error(f"Error counting reviews: {e}", exc_info=True)
+            return 0
 
     def get_bankroll(self, username):
         """
@@ -197,19 +271,49 @@ class StatisticsManagerDB:
             logger.error(f"Error getting accuracy by position: {e}", exc_info=True)
             return {}
 
-    def get_accuracy_by_stack(self, username):
+    def get_accuracy_by_chart(self, username, min_hands=5, limit=8):
+        """
+        The user's weakest decision nodes.
+
+        Replaces accuracy-by-stack, which grouped on a field that is 100 for
+        every chart in the set and so only ever had one row. Nodes with very
+        few hands are excluded - three hands at 0% is noise, not a leak.
+        """
         try:
             pipeline = [
                 {"$match": {"username": username}},
                 {"$group": {
-                    "_id": "$stack",
+                    "_id": "$chart",
                     "correct": {"$sum": {"$cond": ["$is_correct", 1, 0]}},
-                    "total": {"$sum": 1}
-                }}
+                    "total": {"$sum": 1},
+                }},
+                {"$match": {"total": {"$gte": min_hands}}},
             ]
-            return self._process_aggregation(pipeline)
+            rows = self._process_aggregation(pipeline)
+            worst = sorted(rows.items(), key=lambda kv: (kv[1]["percent"], -kv[1]["total"]))
+            return dict(worst[:limit])
         except Exception as e:
-            logger.error(f"Error getting accuracy by stack: {e}", exc_info=True)
+            logger.error(f"Error getting accuracy by chart: {e}", exc_info=True)
+            return {}
+
+    def get_worst_hands(self, username, min_hands=3, limit=10):
+        """Hand classes the user misplays most often, across all nodes."""
+        try:
+            pipeline = [
+                {"$match": {"username": username}},
+                {"$group": {
+                    "_id": "$hand",
+                    "correct": {"$sum": {"$cond": ["$is_correct", 1, 0]}},
+                    "total": {"$sum": 1},
+                }},
+                {"$match": {"total": {"$gte": min_hands}}},
+            ]
+            rows = self._process_aggregation(pipeline)
+            worst = [(k, v) for k, v in rows.items() if v["percent"] < 100]
+            worst.sort(key=lambda kv: (kv[1]["percent"], -kv[1]["total"]))
+            return dict(worst[:limit])
+        except Exception as e:
+            logger.error(f"Error getting worst hands: {e}", exc_info=True)
             return {}
 
     def get_recent_history(self, username, limit=50):
@@ -247,6 +351,7 @@ class StatisticsManagerDB:
         try:
             result = self.history.delete_many({"username": username})
             self.totals.delete_one({"username": username})
+            self.reviews.delete_many({"username": username})
             logger.info(f"Cleared {result.deleted_count} records for user: {username}")
             return result.deleted_count
         except Exception as e:

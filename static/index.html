@@ -684,10 +684,12 @@
         <div id="stats-view" class="hidden w-full max-w-3xl flex-col gap-6 fade-in">
             <div class="flex justify-between items-center"><button onclick="showSetup()" class="bg-white/5 px-4 py-2 rounded-lg hover:bg-white/10 font-semibold text-sm transition border border-white/5 text-gray-400" aria-label="Back">&larr; Back</button><button onclick="clearStats()" class="text-red-400/70 hover:text-red-400 text-xs font-semibold uppercase transition tracking-wider cursor-pointer flex items-center gap-1.5" aria-label="Reset Statistics"><svg class="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/></svg> Reset History</button></div>
             <div class="bg-gray-900/50 backdrop-blur p-8 rounded-2xl text-center border border-white/5 shadow-xl"><div class="text-[10px] text-gray-400 uppercase tracking-[0.2em] font-bold mb-2">Overall Accuracy</div><div id="stats-overall" class="text-7xl font-display text-white tracking-wider">0%</div><div id="stats-detail" class="text-gray-600 font-mono text-sm mt-2">0 correct / 0 total</div></div>
+            <div id="stats-review" class="hidden bg-sky-500/5 border border-sky-500/20 rounded-2xl p-4 text-sm text-sky-200"></div>
             <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div class="bg-gray-900/50 backdrop-blur p-5 rounded-2xl border border-white/5 shadow-lg"><h3 class="text-[10px] font-bold text-gray-500 uppercase mb-4 tracking-[0.2em]">By Position</h3><div class="overflow-x-auto"><table class="w-full text-left text-sm"><tbody id="stats-table-pos" class="divide-y divide-white/5"></tbody></table></div></div>
-                <div class="bg-gray-900/50 backdrop-blur p-5 rounded-2xl border border-white/5 shadow-lg"><h3 class="text-[10px] font-bold text-gray-500 uppercase mb-4 tracking-[0.2em]">By Stack</h3><div class="overflow-x-auto"><table class="w-full text-left text-sm"><tbody id="stats-table-stack" class="divide-y divide-white/5"></tbody></table></div></div>
+                <div class="bg-gray-900/50 backdrop-blur p-5 rounded-2xl border border-white/5 shadow-lg"><h3 class="text-[10px] font-bold text-gray-500 uppercase mb-4 tracking-[0.2em]">Weakest Spots</h3><div class="overflow-x-auto"><table class="w-full text-left text-sm"><tbody id="stats-table-chart" class="divide-y divide-white/5"></tbody></table></div></div>
             </div>
+            <div class="bg-gray-900/50 backdrop-blur p-5 rounded-2xl border border-white/5 shadow-lg"><h3 class="text-[10px] font-bold text-gray-500 uppercase mb-4 tracking-[0.2em]">Hands You Misplay</h3><div id="stats-worst-hands" class="flex flex-wrap gap-2"></div></div>
             <div class="bg-gray-900/50 backdrop-blur p-5 rounded-2xl border border-white/5 flex-1 overflow-hidden flex flex-col shadow-lg"><h3 class="text-[10px] font-bold text-gray-500 uppercase mb-4 tracking-[0.2em]">Session Log (Last 50)</h3><div class="overflow-y-auto pr-2 max-h-64"><table class="w-full text-left text-sm"><thead class="sticky top-0 bg-gray-900"><tr class="text-gray-600 border-b border-white/5 text-[10px] uppercase tracking-wider"><th class="pb-2 pl-2">Pos</th><th class="pb-2">Hand</th><th class="pb-2">You</th><th class="pb-2">GTO</th><th class="pb-2 text-right pr-2">Result</th></tr></thead><tbody id="stats-history-table" class="divide-y divide-white/5 font-mono text-xs"></tbody></table></div></div>
         </div>
 
@@ -1248,7 +1250,28 @@
                 document.getElementById(tableId).innerHTML = html;
             };
             renderRows('stats-table-pos', data.by_pos);
-            renderRows('stats-table-stack', data.by_stack);
+            // Chart keys all share a "cash_6max_100bb_" prefix that carries no
+            // information once you are looking at a single chart set.
+            const shortName = key => key.replace(/^cash_\d+max_\d+bb_/, '').replace(/_/g, ' ');
+            renderRows('stats-table-chart', Object.fromEntries(
+                Object.entries(data.by_chart || {}).map(([k, v]) => [shortName(k), v])
+            ));
+
+            const worst = document.getElementById('stats-worst-hands');
+            const hands = Object.entries(data.worst_hands || {});
+            worst.innerHTML = hands.length
+                ? hands.map(([hand, val]) =>
+                    `<span class="px-2.5 py-1 rounded-lg bg-black/30 border border-amber-500/20 font-mono text-xs text-amber-300">${esc(hand)} <span class="text-gray-500">${val.percent.toFixed(0)}%</span></span>`
+                  ).join('')
+                : '<span class="text-gray-600 text-xs">Nothing yet - play some hands.</span>';
+
+            const review = document.getElementById('stats-review');
+            if (data.review_queue > 0) {
+                review.textContent = `${data.review_queue} spot${data.review_queue === 1 ? '' : 's'} queued for review. Missed hands come back automatically while you drill.`;
+                review.classList.remove('hidden');
+            } else {
+                review.classList.add('hidden');
+            }
             let histHtml = '';
             if(data.history) {
                 data.history.forEach(h => {

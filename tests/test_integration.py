@@ -8,61 +8,47 @@ requests went uncovered. `trainer.py` is gone; these drive `app.py`.
 import json
 from pathlib import Path
 
+import mongomock
 import pytest
 
 import app as application
 from logic.chart_schema import ALL_HANDS
 from logic.nodes import build_node
 from logic.scenario import Action
+from logic.statistics_db import StatisticsManagerDB
 from logic.strategy import StrategyManager
 
 CHART_DIR = Path(__file__).resolve().parent.parent / "strategy_charts"
 
 
-class FakeStats:
-    """Stands in for MongoDB; the game loop must not depend on a live database."""
+@pytest.fixture
+def stats(monkeypatch):
+    """
+    The real statistics store on an in-memory MongoDB.
 
-    def __init__(self):
-        self.logged = []
-
-    def create_user(self, username, password):
-        return True
-
-    def verify_user(self, username, password):
-        return True
-
-    def log_decision(self, result, username):
-        self.logged.append(result)
-
-    def get_bankroll(self, username):
-        return 10000
-
-    def get_leaderboard(self, limit=10):
-        return []
-
-    def get_overall_accuracy(self, username):
-        return {"correct": 0, "total": 0, "percent": 0.0}
-
-    def get_accuracy_by_position(self, username):
-        return {}
-
-    def get_accuracy_by_stack(self, username):
-        return {}
-
-    def get_recent_history(self, username, limit=50):
-        return []
-
-    def clear_stats(self, username):
-        return 0
+    A hand-written fake drifted out of step with the interface the app calls -
+    it was missing the review-queue methods added for adaptive drilling, and
+    the tests only noticed because the request blew up.
+    """
+    monkeypatch.setattr("logic.statistics_db.MongoClient", mongomock.MongoClient)
+    return StatisticsManagerDB("mongodb://localhost:27017/poker")
 
 
 @pytest.fixture
-def client(monkeypatch):
-    monkeypatch.setattr(application, "stats_mgr", FakeStats())
+def client(monkeypatch, stats):
+    monkeypatch.setattr(application, "stats_mgr", stats)
     monkeypatch.setattr(application, "strategy_mgr", StrategyManager(CHART_DIR))
     application.app.config["TESTING"] = True
+    # Every test registers from the same address; without this the limiter
+    # starts refusing them partway through the file.
+    application._rate_limits.clear()
+
     with application.app.test_client() as test_client:
-        test_client.post("/api/auth/login", json={"username": "tester", "password": "password1"})
+        # The real store verifies credentials, so the account has to exist.
+        registered = test_client.post(
+            "/api/auth/register", json={"username": "tester", "password": "password1"}
+        )
+        assert registered.status_code == 200, registered.get_json()
         yield test_client
 
 
@@ -150,7 +136,7 @@ def test_a_token_from_another_user_is_rejected(client):
     """Signed tokens are bound to the account they were issued to."""
     scenario = client.post("/api/start", json={}).get_json()
     with application.app.test_client() as other:
-        other.post("/api/auth/login", json={"username": "someone_else", "password": "password1"})
+        other.post("/api/auth/register", json={"username": "someone_else", "password": "password1"})
         rejected = other.post("/api/act", json={"action": "FOLD", "token": scenario["token"]})
         assert rejected.status_code == 400
 
@@ -197,6 +183,36 @@ def test_acting_without_a_token_is_rejected(client):
 def test_invalid_action_is_rejected(client):
     token = client.post("/api/start", json={}).get_json()["token"]
     assert client.post("/api/act", json={"action": "LIMP", "token": token}).status_code == 400
+
+
+def test_a_missed_hand_comes_back(client, stats):
+    """
+    The drill adapts: answer a spot wrong and it is scheduled to return, which
+    is the whole point of tracking decisions in the first place.
+    """
+    scenario = client.post("/api/start", json={}).get_json()
+    wrong = "FOLD" if scenario["raise_label"] else "FOLD"
+    client.post("/api/act", json={"action": wrong, "token": scenario["token"]})
+
+    # Whether that answer was wrong depends on the hand dealt, so drive hands
+    # until one is missed rather than assuming.
+    token = scenario["token"]
+    for _ in range(40):
+        if stats.count_tracked_reviews("tester"):
+            break
+        scenario = client.post("/api/next", json={"token": token}).get_json()
+        token = scenario["token"]
+        client.post("/api/act", json={"action": "RAISE", "token": token})
+    assert stats.count_tracked_reviews("tester") > 0, "no missed hand was ever tracked"
+
+
+def test_statistics_report_leaks(client):
+    scenario = client.post("/api/start", json={}).get_json()
+    client.post("/api/act", json={"action": "FOLD", "token": scenario["token"]})
+    payload = client.get("/api/statistics").get_json()
+    for field in ("overall", "by_pos", "by_chart", "worst_hands", "review_queue", "history"):
+        assert field in payload, field
+    assert "by_stack" not in payload, "stack depth is constant across the chart set"
 
 
 def test_game_routes_require_a_session():

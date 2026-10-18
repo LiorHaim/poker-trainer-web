@@ -9,8 +9,8 @@ Built with Flask, MongoDB, and a lo-fi themed frontend.
 - **45 Strategy Charts** — covers all key 6-Max 100BB spots: RFI, vs RFI (including 3-betting), vs 3-Bet, vs 4-Bet, vs 5-Bet, and Squeeze
 - **Drill Mode** — continuous hands across all loaded charts, dealt only from ranges that can actually reach each spot
 - **Focus Mode** — practice a specific position or situation (e.g. "only BTN spots")
-- **Instant Feedback** — see whether your action matches the reference strategy, with a coaching explanation
-- **Visual Range Matrix** — view the full strategy chart with your hand highlighted
+- **Instant Feedback** — see whether your action matches the reference strategy, with a coaching explanation, without leaving the spot on screen
+- **Visual Range Matrix** — the full chart sits beside the table the whole time, masked until you act, with your hand highlighted
 - **Performance Tracking** — accuracy stats broken down by position and stack depth
 - **Leaderboard** — compete with other users
 - **Lo-fi Music Player** — ambient background music while you train
@@ -57,7 +57,7 @@ it. Progress:
 | 2 | Deal hands only from ranges that can reach the node | done |
 | 3 | Mixed-frequency charts and EV-loss scoring | blocked on solver data |
 | 4 | Stateless scenario tokens, rollup stats, container hardening | done |
-| 5 | Frontend rebuild | planned |
+| 5 | Zero-scroll drill loop, hero-at-bottom table, colour-blind-safe palette | done |
 
 Range frequencies are asserted against reference bands in
 `tests/test_chart_invariants.py`, so a chart cannot drift back out of range

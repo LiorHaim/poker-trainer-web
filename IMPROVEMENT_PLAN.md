@@ -417,6 +417,42 @@ automatic fold goes from **7% to 47%**. Every deal is now a spot that can actual
 Still open from Part 1: §1.6 (other stack depths, limps, vs-squeeze, 9-max, MTT) and §1.7 (binary
 scoring), which is phase 3.
 
+### Phase 4 — done
+
+The backend correctness items from §3.1.
+
+- **Training state is a signed token, not a server-side dict.** `logic/session_token.py` carries the
+  session's filters and the live hand to the client, signed with `SECRET_KEY`. `_user_state` is gone, and
+  with it the two bugs it caused: the app was only correct at a single gunicorn worker (start a hand on A,
+  answer on B, get "No active scenario"), and the dict only shed entries on explicit logout. Verified by
+  running two separate app module instances and answering on the second a hand dealt by the first.
+  Tokens are bound to the issuing account and expire after 12 hours. Replay is still possible — the dict
+  allowed it too — and needs a shared nonce store to close.
+- **`/api/next` is now a POST**, since it carries the token.
+- **The rate-limit dict is swept** instead of keeping an entry per client address seen since start-up, and
+  a successful login clears that address's attempts rather than counting against it.
+- **Bankroll is a point read.** It was aggregating the user's entire history on every single decision —
+  O(hands played) per hand. A running totals document is incremented on write, with a one-time lazy
+  backfill for users whose history predates it, so the HUD and the leaderboard cannot disagree.
+- **Scoring constants have one definition.** `STARTING_BANKROLL`, `CORRECT_REWARD` and `INCORRECT_PENALTY`
+  were written out three times, including inside the leaderboard's Mongo pipeline.
+- **The container runs as non-root**, has a `HEALTHCHECK` against `/api/health`, and defaults to two
+  gunicorn workers now that more than one is safe.
+
+Not done: splitting `app.py` into blueprints. It is refactoring churn with no behaviour change, and it would
+bury the above in a large diff; worth doing alongside the next feature that touches routing.
+
+### Phase 3 — deferred, and why
+
+Phase 3 scores decisions by EV loss instead of a binary right/wrong. The value is precision, and EV figures
+are exactly the quantity that should not be hand-authored: `"ev": {"RAISE": 2.31}` invented by hand is
+fabricated precision presented as authority, which is worse than the binary scoring it replaces. It needs
+solver exports.
+
+The honest subset that does not need them is mixed *frequencies* without EVs — marking the boundary hands a
+chart plays two ways and accepting either answer, which removes the worst of the binary-scoring harm. That
+is worth doing if solver data stays out of reach.
+
 ### Appendix — audit scripts
 
 The throwaway scripts used to produce the tables in Part 1 are now superseded by

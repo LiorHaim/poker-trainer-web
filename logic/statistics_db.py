@@ -5,6 +5,18 @@ from werkzeug.security import check_password_hash, generate_password_hash
 
 logger = logging.getLogger(__name__)
 
+# --- Scoring ---
+# These were duplicated in app.py and again inside the leaderboard aggregation,
+# so changing one left the HUD and the leaderboard disagreeing.
+STARTING_BANKROLL = 10000
+CORRECT_REWARD = 100
+INCORRECT_PENALTY = 100
+
+
+def bankroll_from(correct: int, total: int) -> int:
+    """The one definition of what a bankroll is."""
+    return STARTING_BANKROLL + correct * CORRECT_REWARD - (total - correct) * INCORRECT_PENALTY
+
 class StatisticsManagerDB:
     def __init__(self, mongo_uri):
         try:
@@ -12,6 +24,9 @@ class StatisticsManagerDB:
             self.db = self.client.get_database()
             self.history = self.db.history
             self.users = self.db.users
+            #: Running per-user counts, so a bankroll is a point read rather
+            #: than an aggregation over the user's whole history on every hand.
+            self.totals = self.db.totals
 
             # Create indexes for better query performance
             self._create_indexes()
@@ -29,6 +44,8 @@ class StatisticsManagerDB:
             self.history.create_index([("username", 1), ("is_correct", 1)])
             # Index on username for users collection
             self.users.create_index("username", unique=True)
+            # Running totals, one document per user.
+            self.totals.create_index("username", unique=True)
             logger.info("Database indexes created successfully")
         except Exception as e:
             logger.warning(f"Error creating indexes (may already exist): {e}")
@@ -73,34 +90,54 @@ class StatisticsManagerDB:
                 "chart": result.scenario.chart_key
             }
             self.history.insert_one(entry)
+            self.totals.update_one(
+                {"username": username},
+                {"$inc": {"total": 1, "correct": 1 if result.is_correct else 0}},
+                upsert=True,
+            )
         except Exception as e:
             logger.error(f"Error logging decision: {e}", exc_info=True)
             # Don't raise - we don't want to break the game flow if logging fails
 
     def get_bankroll(self, username):
-        # Calculate bankroll for SPECIFIC user
-        try:
-            stats = self.history.aggregate([
-                {"$match": {"username": username}},
-                {"$group": {
-                    "_id": None,
-                    "correct": {"$sum": {"$cond": ["$is_correct", 1, 0]}},
-                    "total": {"$sum": 1}
-                }}
-            ])
-            res = list(stats)
-            if not res: return 10000
+        """
+        Read the user's running totals.
 
-            correct = res[0]['correct']
-            total = res[0]['total']
-            incorrect = total - correct
-            starting_bankroll = 10000
-            reward_per_correct = 100
-            penalty_per_incorrect = 100
-            return starting_bankroll + (correct * reward_per_correct) - (incorrect * penalty_per_incorrect)
+        This used to aggregate the user's entire history on every single hand,
+        which is O(hands played) per decision.
+        """
+        try:
+            totals = self.totals.find_one({"username": username})
+            if not totals:
+                totals = self._backfill_totals(username)
+            return bankroll_from(totals.get("correct", 0), totals.get("total", 0))
         except Exception as e:
             logger.error(f"Error calculating bankroll: {e}", exc_info=True)
-            return 10000  # Return default on error
+            return STARTING_BANKROLL
+
+    def _backfill_totals(self, username):
+        """
+        Build a user's running totals from their history.
+
+        Needed once per user for data written before totals existed, otherwise
+        their bankroll would read as the starting amount while the leaderboard,
+        which counts history directly, showed the real figure.
+        """
+        counts = list(self.history.aggregate([
+            {"$match": {"username": username}},
+            {"$group": {
+                "_id": None,
+                "correct": {"$sum": {"$cond": ["$is_correct", 1, 0]}},
+                "total": {"$sum": 1},
+            }},
+        ]))
+        totals = {"correct": counts[0]["correct"], "total": counts[0]["total"]} if counts else {
+            "correct": 0, "total": 0
+        }
+        if totals["total"]:
+            self.totals.update_one({"username": username}, {"$set": totals}, upsert=True)
+            logger.info("Backfilled totals for %s from %d history records", username, totals["total"])
+        return totals
 
     def get_leaderboard(self, limit=10):
         """
@@ -116,7 +153,13 @@ class StatisticsManagerDB:
                 }},
                 {"$project": {
                     "username": "$_id",
-                    "bankroll": {"$add": [10000, {"$subtract": [{"$multiply": ["$correct", 100]}, {"$multiply": [{"$subtract": ["$total", "$correct"]}, 100]}]}]},
+                    "bankroll": {"$add": [
+                        STARTING_BANKROLL,
+                        {"$subtract": [
+                            {"$multiply": ["$correct", CORRECT_REWARD]},
+                            {"$multiply": [{"$subtract": ["$total", "$correct"]}, INCORRECT_PENALTY]},
+                        ]},
+                    ]},
                     "hands": "$total",
                     "accuracy": {"$cond": [{"$eq": ["$total", 0]}, 0, {"$multiply": [{"$divide": ["$correct", "$total"]}, 100]}]}
                 }},
@@ -203,6 +246,7 @@ class StatisticsManagerDB:
     def clear_stats(self, username):
         try:
             result = self.history.delete_many({"username": username})
+            self.totals.delete_one({"username": username})
             logger.info(f"Cleared {result.deleted_count} records for user: {username}")
             return result.deleted_count
         except Exception as e:

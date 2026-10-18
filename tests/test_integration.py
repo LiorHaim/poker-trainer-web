@@ -61,7 +61,6 @@ def client(monkeypatch):
     monkeypatch.setattr(application, "stats_mgr", FakeStats())
     monkeypatch.setattr(application, "strategy_mgr", StrategyManager(CHART_DIR))
     application.app.config["TESTING"] = True
-    application._user_state.clear()
     with application.app.test_client() as test_client:
         test_client.post("/api/auth/login", json={"username": "tester", "password": "password1"})
         yield test_client
@@ -116,46 +115,88 @@ def test_full_game_loop(client):
     assert started.status_code == 200
     scenario = started.get_json()
     for field in ("hero_pos", "situation", "pot", "to_call", "card1", "card2",
-                  "raise_label", "action_text"):
+                  "raise_label", "action_text", "token"):
         assert field in scenario
 
-    acted = client.post("/api/act", json={"action": "FOLD"})
+    acted = client.post("/api/act", json={"action": "FOLD", "token": scenario["token"]})
     assert acted.status_code == 200
     result = acted.get_json()
     assert isinstance(result["is_correct"], bool)
     assert result["correct_action"] in ("FOLD", "CALL", "RAISE")
     assert len(result["chart"]) == 169
 
-    assert client.get("/api/next").status_code == 200
+    assert client.post("/api/next", json={"token": scenario["token"]}).status_code == 200
+
+
+def test_the_answer_is_graded_against_the_hand_in_the_token(client):
+    """
+    The server keeps nothing between requests, so the token has to carry the
+    spot. Grading must use the hand it names, not a freshly dealt one.
+    """
+    scenario = client.post("/api/start", json={}).get_json()
+    first = client.post("/api/act", json={"action": "FOLD", "token": scenario["token"]}).get_json()
+    second = client.post("/api/act", json={"action": "FOLD", "token": scenario["token"]}).get_json()
+    assert first["hero_hand"] == second["hero_hand"]
+    assert first["correct_action"] == second["correct_action"]
+
+
+def test_a_tampered_token_is_rejected(client):
+    scenario = client.post("/api/start", json={}).get_json()
+    forged = scenario["token"][:-5] + "xxxxx"
+    assert client.post("/api/act", json={"action": "FOLD", "token": forged}).status_code == 400
+
+
+def test_a_token_from_another_user_is_rejected(client):
+    """Signed tokens are bound to the account they were issued to."""
+    scenario = client.post("/api/start", json={}).get_json()
+    with application.app.test_client() as other:
+        other.post("/api/auth/login", json={"username": "someone_else", "password": "password1"})
+        rejected = other.post("/api/act", json={"action": "FOLD", "token": scenario["token"]})
+        assert rejected.status_code == 400
+
+
+def test_the_session_survives_a_restart(client, monkeypatch):
+    """
+    What the per-worker dict could not do: a hand started against one process
+    can be answered by another, as long as they share a secret key.
+    """
+    scenario = client.post("/api/start", json={}).get_json()
+    monkeypatch.setattr(application, "strategy_mgr", StrategyManager(CHART_DIR))
+    answered = client.post("/api/act", json={"action": "FOLD", "token": scenario["token"]})
+    assert answered.status_code == 200
 
 
 def test_many_scenarios_across_every_chart(client):
     """Catch a chart whose metadata the engine cannot turn into a spot."""
-    client.post("/api/start", json={})
+    token = client.post("/api/start", json={}).get_json()["token"]
     seen = set()
     for _ in range(300):
-        scenario = client.get("/api/next").get_json()
+        scenario = client.post("/api/next", json={"token": token}).get_json()
         assert "hero_pos" in scenario, scenario
         seen.add(scenario["situation"])
+        token = scenario["token"]
     assert {"RFI", "vs_RFI"} <= seen
 
 
 def test_focus_mode_filters_by_position(client):
     started = client.post("/api/start", json={"training_mode": "Focus", "focus_position": "BTN"})
     assert started.status_code == 200
-    assert started.get_json()["hero_pos"] == "BTN"
+    scenario = started.get_json()
+    assert scenario["hero_pos"] == "BTN"
+    # The settings ride in the token, so the filter survives without server state.
     for _ in range(25):
-        assert client.get("/api/next").get_json()["hero_pos"] == "BTN"
+        scenario = client.post("/api/next", json={"token": scenario["token"]}).get_json()
+        assert scenario["hero_pos"] == "BTN"
 
 
-def test_acting_without_starting_is_rejected(client):
-    application._user_state.clear()
+def test_acting_without_a_token_is_rejected(client):
     assert client.post("/api/act", json={"action": "FOLD"}).status_code == 400
+    assert client.post("/api/next", json={}).status_code == 400
 
 
 def test_invalid_action_is_rejected(client):
-    client.post("/api/start", json={})
-    assert client.post("/api/act", json={"action": "LIMP"}).status_code == 400
+    token = client.post("/api/start", json={}).get_json()["token"]
+    assert client.post("/api/act", json={"action": "LIMP", "token": token}).status_code == 400
 
 
 def test_game_routes_require_a_session():
@@ -163,4 +204,4 @@ def test_game_routes_require_a_session():
     with application.app.test_client() as anonymous:
         assert anonymous.post("/api/start", json={}).status_code == 401
         assert anonymous.post("/api/act", json={"action": "FOLD"}).status_code == 401
-        assert anonymous.get("/api/next").status_code == 401
+        assert anonymous.post("/api/next", json={}).status_code == 401

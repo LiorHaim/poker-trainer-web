@@ -8,8 +8,9 @@ from collections import defaultdict
 
 from flask import Flask, jsonify, request, send_from_directory, session
 
+from logic import session_token
 from logic.nodes import build_scenario
-from logic.scenario import Action, TrainingResult
+from logic.scenario import Action, Hand, TrainingResult
 from logic.statistics_db import StatisticsManagerDB
 from logic.strategy import StrategyManager
 
@@ -28,7 +29,11 @@ if not secret_key:
         logger.error("SECRET_KEY environment variable is required in production!")
         sys.exit(1)
     secret_key = secrets.token_hex(32)
-    logger.warning("Using auto-generated secret key. Set SECRET_KEY env var for production!")
+    logger.warning(
+        "Using an auto-generated secret key. Set SECRET_KEY for production. "
+        "It also signs training tokens, so every worker and replica must share "
+        "the same value or a hand dealt by one is rejected by another."
+    )
 app.secret_key = secret_key
 
 # --- Security: Cookie Configuration ---
@@ -40,22 +45,45 @@ if os.environ.get("FLASK_ENV") == "production":
     app.config['SESSION_COOKIE_SECURE'] = True
 
 # --- Constants ---
-STARTING_BANKROLL = 10000
-CORRECT_REWARD = 100
-INCORRECT_PENALTY = 100
 MONGO_URI = os.environ.get("MONGO_URI", "mongodb://localhost:27017/poker")
 
 # --- Rate Limiting (in-memory, per-process) ---
+# Per-process, so N gunicorn workers allow N times the limit. Good enough to
+# blunt credential stuffing; a real limit needs a shared store.
 _rate_limits = defaultdict(list)
+_rate_limit_swept_at = 0.0
+RATE_LIMIT_SWEEP_SECONDS = 300
+
+
+def _sweep_rate_limits(now, window):
+    """
+    Drop keys with no recent attempts.
+
+    Without this the dict keeps an entry per client address seen since start-up
+    and grows without bound on a long-running process.
+    """
+    global _rate_limit_swept_at
+    if now - _rate_limit_swept_at < RATE_LIMIT_SWEEP_SECONDS:
+        return
+    _rate_limit_swept_at = now
+    for key in [k for k, hits in _rate_limits.items() if not hits or now - hits[-1] >= window]:
+        del _rate_limits[key]
+
 
 def check_rate_limit(key, max_attempts=10, window=60):
     """Simple in-memory rate limiter. Returns True if rate limited."""
     now = time.time()
+    _sweep_rate_limits(now, window)
     _rate_limits[key] = [t for t in _rate_limits[key] if now - t < window]
     if len(_rate_limits[key]) >= max_attempts:
         return True
     _rate_limits[key].append(now)
     return False
+
+
+def clear_rate_limit(key):
+    """Forget a client's attempts, so a success does not count against them."""
+    _rate_limits.pop(key, None)
 
 # --- Security Headers ---
 @app.after_request
@@ -76,14 +104,6 @@ except Exception as e:
     logger.error(f"FATAL ERROR during initialization: {e}", exc_info=True)
     strategy_mgr = None
     stats_mgr = None
-
-# --- Per-User Game State ---
-# Replaces the shared TrainingEngine singleton to prevent race conditions
-# between concurrent users. Each user's scenario and available charts are
-# stored independently. With gunicorn, this is per-worker (acceptable for
-# small-scale; use Redis for production scale).
-_user_state = {}
-
 
 # --- Stateless Game Logic Helpers ---
 
@@ -304,6 +324,9 @@ def login():
 
     try:
         if stats_mgr.verify_user(username, password):
+            # A successful login should not eat into the attempt budget, or a
+            # legitimate user gets locked out by their own activity.
+            clear_rate_limit(f"login:{client_ip}")
             session['user'] = username
             logger.info(f"User logged in: {username}")
             bankroll = stats_mgr.get_bankroll(username)
@@ -316,9 +339,7 @@ def login():
 
 @app.route('/api/auth/logout', methods=['POST'])
 def logout():
-    username = session.pop('user', None)
-    if username:
-        _user_state.pop(username, None)
+    session.pop('user', None)
     return jsonify({"success": True})
 
 @app.route('/api/auth/me', methods=['GET'])
@@ -351,6 +372,38 @@ def get_leaderboard():
 
 # --- Game Routes (per-user state, no shared mutable singleton) ---
 
+def _normalised_settings(raw):
+    settings = dict(raw or {})
+    settings.setdefault("game_type", "Cash Game")
+    settings.setdefault("table_size", 6)
+    settings["stack_depths"] = [100]
+    return settings
+
+
+def _issue_scenario(username, settings):
+    """Pick a scenario and hand the client a signed token describing it."""
+    available = filter_scenarios(settings)
+    if not available:
+        return None, None
+
+    scenario = generate_scenario(available)
+    if not scenario:
+        return None, None
+
+    token = session_token.issue(
+        app.secret_key,
+        session_token.TrainingToken(
+            username=username,
+            settings=settings,
+            chart_key=scenario.chart_key,
+            hand=f"{scenario.hero_hand.card1}{scenario.hero_hand.card2}",
+        ),
+    )
+    payload = serialize_scenario(scenario)
+    payload["token"] = token
+    return scenario, payload
+
+
 @app.route('/api/start', methods=['POST'])
 def start():
     if 'user' not in session:
@@ -361,25 +414,17 @@ def start():
         return jsonify({"error": "Request must be JSON"}), 400
 
     username = session['user']
-    settings = request.json or {}
-    if "game_type" not in settings: settings["game_type"] = "Cash Game"
-    if "table_size" not in settings: settings["table_size"] = 6
-    settings['stack_depths'] = [100]
+    settings = _normalised_settings(request.json)
 
     try:
-        available = filter_scenarios(settings)
-        if not available:
+        scenario, payload = _issue_scenario(username, settings)
+        if payload is None:
             return jsonify({"error": "No charts match these settings."}), 400
-
-        scenario = generate_scenario(available)
-        if not scenario:
-            return jsonify({"error": "Failed to generate scenario"}), 500
-
-        _user_state[username] = {"available": available, "scenario": scenario}
-        return jsonify(serialize_scenario(scenario))
+        return jsonify(payload)
     except Exception as e:
         logger.error(f"Error starting training: {e}", exc_info=True)
         return jsonify({"error": "Failed to start training"}), 500
+
 
 @app.route('/api/act', methods=['POST'])
 def act():
@@ -391,27 +436,38 @@ def act():
         return jsonify({"error": "Request must be JSON"}), 400
 
     username = session['user']
-    state = _user_state.get(username)
-    if not state or not state.get("scenario"):
+    data = request.json or {}
+
+    action_str = data.get('action')
+    if action_str not in ('FOLD', 'CALL', 'RAISE'):
+        return jsonify({"error": "Invalid action. Must be FOLD, CALL, or RAISE"}), 400
+
+    try:
+        token = session_token.verify(app.secret_key, data.get("token"), username)
+    except session_token.InvalidToken as e:
+        # Covers a tampered token as well as a missing one; the client's cue is
+        # the same either way - start a new hand.
+        logger.info("Rejected training token for %s: %s", username, e)
+        return jsonify({"error": "No active scenario. Start training first."}), 400
+
+    if not token.chart_key or not token.hand:
+        return jsonify({"error": "No active scenario. Start training first."}), 400
+
+    meta = strategy_mgr.chart_metadata.get(token.chart_key)
+    if meta is None:
         return jsonify({"error": "No active scenario. Start training first."}), 400
 
     try:
-        data = request.json
-        if not data or 'action' not in data:
-            return jsonify({"error": "Missing 'action' field"}), 400
-
-        action_str = data['action']
-        if action_str not in ('FOLD', 'CALL', 'RAISE'):
-            return jsonify({"error": "Invalid action. Must be FOLD, CALL, or RAISE"}), 400
-
-        action = Action[action_str]
-        result = evaluate_action(state["scenario"], action)
+        scenario = build_scenario(
+            {**meta, "chart_key": token.chart_key},
+            Hand.from_str(token.hand),
+            token.chart_key,
+        )
+        result = evaluate_action(scenario, Action[action_str])
 
         stats_mgr.log_decision(result, username)
         _leaderboard_cache["data"] = None
         _leaderboard_cache["timestamp"] = 0
-
-        bankroll = stats_mgr.get_bankroll(username)
 
         return jsonify({
             "is_correct": result.is_correct,
@@ -419,31 +475,38 @@ def act():
             "correct_action": result.correct_action.value,
             "chart": serialize_chart(result.compiled_chart),
             "hero_hand": result.scenario.hero_hand.range_notation,
-            "bankroll": bankroll
+            "bankroll": stats_mgr.get_bankroll(username),
         })
-    except KeyError as e:
-        logger.error(f"Invalid action key: {e}", exc_info=True)
-        return jsonify({"error": f"Invalid action: {e}"}), 400
+    except ValueError as e:
+        logger.info("Unusable scenario in token for %s: %s", username, e)
+        return jsonify({"error": "No active scenario. Start training first."}), 400
     except Exception as e:
         logger.error(f"Error processing action: {e}", exc_info=True)
         return jsonify({"error": "Failed to process action"}), 500
 
-@app.route('/api/next', methods=['GET'])
+
+@app.route('/api/next', methods=['POST'])
 def next_hand():
     if 'user' not in session:
         return jsonify({"error": "Unauthorized"}), 401
+    if not strategy_mgr:
+        return jsonify({"error": "Server not initialized"}), 500
 
     username = session['user']
-    state = _user_state.get(username)
-    if not state or not state.get("available"):
+    data = request.json if request.is_json else {}
+
+    try:
+        token = session_token.verify(app.secret_key, (data or {}).get("token"), username)
+    except session_token.InvalidToken as e:
+        logger.info("Rejected training token for %s: %s", username, e)
         return jsonify({"error": "No training session active. Start training first."}), 400
 
     try:
-        scenario = generate_scenario(state["available"])
-        if not scenario:
-            return jsonify({"error": "Failed to generate scenario"}), 500
-        state["scenario"] = scenario
-        return jsonify(serialize_scenario(scenario))
+        settings = _normalised_settings(token.settings)
+        scenario, payload = _issue_scenario(username, settings)
+        if payload is None:
+            return jsonify({"error": "No charts match these settings."}), 400
+        return jsonify(payload)
     except Exception as e:
         logger.error(f"Error getting next hand: {e}", exc_info=True)
         return jsonify({"error": "Failed to get next hand"}), 500

@@ -17,7 +17,7 @@
   "actions": {
     "RAISE": [
       "AA", "KK", "QQ", "JJ",
-      "AKs", "AQs", "A5s", "A4s",
+      "AKs", "A5s", "A4s",
       "AKo"
     ],
     "CALL": [

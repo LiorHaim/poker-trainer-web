@@ -1,13 +1,19 @@
 {
   "metadata": {
-    "chart_id": "cash_6max_100bb_BTN_vs_SB_4Bet",
+    "chart_id": "cash_6max_100bb_BTN_vs_SB_5Bet",
     "description": "6-Max Cash Game, 100bb deep. Hero opens from BTN to 2.5BB, SB 3-bets to 10BB, Hero 4-bets to 22BB. SB 5-bets all-in.",
     "game_type": "cash",
     "table_size": 6,
     "stack_depth": 100,
     "hero_position": "BTN",
-    "situation": "vs_4Bet",
+    "situation": "vs_5Bet",
     "villain_position": "SB",
+    "sizings": {
+      "open_bb": 2.5,
+      "3bet_bb": 11.0,
+      "4bet_bb": 24.2,
+      "5bet_bb": 100.0
+    },
     "explanations": {
       "RAISE": "Call the 5-bet shove with the nuts. We're happy to get it in with premiums.",
       "CALL": "Call the shove with hands that have good equity against a polarized 5-bet range.",

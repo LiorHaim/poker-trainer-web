@@ -1,17 +1,23 @@
 {
   "metadata": {
-    "chart_id": "cash_6max_100bb_SB_vs_BB_4Bet",
-    "description": "6-Max Cash Game, 100bb deep. Hero opens from SB to 3BB, BB 3-bets to 10BB, Hero 4-bets to 22BB. BB 5-bets all-in. BvB war!",
+    "chart_id": "cash_6max_100bb_UTG_vs_MP_5Bet",
+    "description": "6-Max Cash Game, 100bb deep. Hero opens from UTG to 3BB, gets 3-bet, 4-bets to 25BB. Villain 5-bets all-in or to 60BB.",
     "game_type": "cash",
     "table_size": 6,
     "stack_depth": 100,
-    "hero_position": "SB",
-    "situation": "vs_4Bet",
-    "villain_position": "BB",
+    "hero_position": "UTG",
+    "situation": "vs_5Bet",
+    "villain_position": "MP",
+    "sizings": {
+      "open_bb": 2.5,
+      "3bet_bb": 8.0,
+      "4bet_bb": 17.6,
+      "5bet_bb": 100.0
+    },
     "explanations": {
-      "RAISE": "Call the 5-bet shove. BvB pots can get wild, but we need the nuts to call an all-in.",
-      "CALL": "Call the shove with hands that have good equity in BvB spots.",
-      "FOLD": "Our 4-bet was a bluff or thin value. BB's 5-bet is polarized - fold everything else."
+      "RAISE": "5-bet all-in with the absolute nuts. AA and KK are always getting stacks in from UTG.",
+      "CALL": "Only call with hands too strong to fold but not quite good enough to 5-bet for value.",
+      "FOLD": "Our 3-bet/4-bet was a bluff or thin value. We cannot continue vs a 5-bet. Save our stack."
     }
   },
   "actions": {
@@ -19,13 +25,12 @@
       "AA", "KK"
     ],
     "CALL": [
-      "QQ", "JJ",
-      "AKs", "AQs",
-      "AKo"
+      "QQ",
+      "AKs"
     ],
     "FOLD": [
-      "TT", "99", "88", "77", "66", "55", "44", "33", "22",
-      "AJs", "ATs", "A9s", "A8s", "A7s", "A6s", "A5s", "A4s", "A3s", "A2s",
+      "JJ", "TT", "99", "88", "77", "66", "55", "44", "33", "22",
+      "AQs", "AJs", "ATs", "A9s", "A8s", "A7s", "A6s", "A5s", "A4s", "A3s", "A2s",
       "KQs", "KJs", "KTs", "K9s", "K8s", "K7s", "K6s", "K5s", "K4s", "K3s", "K2s",
       "QJs", "QTs", "Q9s", "Q8s", "Q7s", "Q6s", "Q5s", "Q4s", "Q3s", "Q2s",
       "JTs", "J9s", "J8s", "J7s", "J6s", "J5s", "J4s", "J3s", "J2s",
@@ -37,7 +42,7 @@
       "54s", "53s", "52s",
       "43s", "42s",
       "32s",
-      "AQo", "AJo", "ATo", "A9o", "A8o", "A7o", "A6o", "A5o", "A4o", "A3o", "A2o",
+      "AKo", "AQo", "AJo", "ATo", "A9o", "A8o", "A7o", "A6o", "A5o", "A4o", "A3o", "A2o",
       "KQo", "KJo", "KTo", "K9o", "K8o", "K7o", "K6o", "K5o", "K4o", "K3o", "K2o",
       "QJo", "QTo", "Q9o", "Q8o", "Q7o", "Q6o", "Q5o", "Q4o", "Q3o", "Q2o",
       "JTo", "J9o", "J8o", "J7o", "J6o", "J5o", "J4o", "J3o", "J2o",

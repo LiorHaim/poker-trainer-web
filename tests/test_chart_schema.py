@@ -10,7 +10,6 @@ import pytest
 from logic.chart_schema import (
     ALL_HANDS,
     ERROR,
-    WARNING,
     ChartIssue,
     apply_baseline,
     decision_node_id,
@@ -128,7 +127,7 @@ def test_detects_bad_position():
 
 
 def test_detects_bad_situation():
-    chart = good_chart(situation="vs_5Bet")
+    chart = good_chart(situation="vs_6Bet")
     assert "bad-situation" in codes(validate_chart("cash_6max_100bb_BTN_RFI", chart), ERROR)
 
 
@@ -137,10 +136,14 @@ def test_detects_non_integer_stack_depth():
     assert "bad-metadata-type" in codes(validate_chart("cash_6max_100bb_BTN_RFI", chart), ERROR)
 
 
-def test_warns_on_missing_sizings():
+def test_rejects_missing_sizings():
+    """
+    Without sizings the engine falls back to defaults, and the pot odds shown
+    do not match the sizes the ranges were built for.
+    """
     chart = good_chart()
     del chart["metadata"]["sizings"]
-    assert "missing-sizings" in codes(validate_chart("cash_6max_100bb_BTN_RFI", chart), WARNING)
+    assert "missing-sizings" in codes(validate_chart("cash_6max_100bb_BTN_RFI", chart), ERROR)
 
 
 def test_rejects_negative_sizing():

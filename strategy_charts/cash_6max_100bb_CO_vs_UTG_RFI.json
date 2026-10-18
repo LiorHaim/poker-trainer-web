@@ -8,6 +8,10 @@
     "hero_position": "CO",
     "situation": "vs_RFI",
     "villain_position": "UTG",
+    "sizings": {
+      "open_bb": 2.5,
+      "3bet_bb": 8.0
+    },
     "explanations": {
       "RAISE": "3-bet for value only. UTG opens a very tight range, so our 3-bet range must be premium heavy.",
       "CALL": "Call with hands that have good implied odds (pocket pairs for set-mining, suited connectors). We're in position postflop.",

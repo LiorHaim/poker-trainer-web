@@ -63,11 +63,19 @@ Nothing parses the filename, but staying consistent keeps the directory readable
 |---|---|---|
 | `RFI` | Folded to hero | — |
 | `vs_RFI` | Hero faces an open — fold, call, or 3-bet | `villain_position` |
-| `vs_3Bet` | Hero opened and faces a 3-bet | `villain_position` |
-| `vs_4Bet` | Hero 3-bet and faces a 4-bet | `villain_position` |
+| `vs_3Bet` | Hero opened, villain 3-bet | `villain_position` |
+| `vs_4Bet` | Villain opened, hero 3-bet, villain 4-bet | `villain_position` |
+| `vs_5Bet` | Hero opened, villain 3-bet, hero 4-bet, villain jammed | `villain_position` |
 | `squeeze` | Hero faces an open and a cold call | `opener_position`, `caller_position` |
 
 A villain seat may not be the same as `hero_position`.
+
+`vs_4Bet` and `vs_5Bet` are different nodes, and position order decides which
+one a spot can be. Hero can only be *facing* a 4-bet if hero 3-bet, which means
+hero acts after the opener; if hero acts first, hero opened and the big raise
+coming back at them is a 5-bet. Five charts were originally labelled `vs_4Bet`
+while describing a 5-bet spot — their own explanations said "5-bet all-in" —
+and were relabelled in phase 1.
 
 > There used to be a separate `3Bet` situation describing the same decision as
 > `vs_RFI`, which meant two charts per spot with conflicting answers on up to 34
@@ -92,13 +100,19 @@ this automatically:
 carry their own derivation and a range can be reviewed as one line. Be honest in
 `type`: `authored` ranges are reasonable reference ranges, not an equilibrium.
 
-### `metadata.sizings` — optional, becoming required
+### `metadata.sizings` — required
 
 Bet sizes in bb that the ranges were built for: `open_bb`, `3bet_bb`, `4bet_bb`,
-`5bet_bb`, `call_bb`. Still optional and warned about for the charts that have
-not been regenerated yet, because the engine hardcodes 3.0bb for every open
-regardless of what a chart says — so a chart built for a 2.5bb open is drilled
-at 3.0bb and the pot odds shown to the user are wrong.
+`5bet_bb`, `call_bb`.
+
+`logic/nodes.py` builds the spot from these — who acted, for how much, what is
+in the pot and what hero has to call. Get them wrong and the user is shown pot
+odds that do not match the range they are being tested on, which is exactly
+what happened before: every open was hardcoded to 3.0bb regardless of the chart.
+
+Only the keys a situation needs are used. A chart may omit the rest, but what it
+does declare must be positive. Anything missing falls back to
+`logic.nodes.DEFAULT_SIZINGS`.
 
 ### `actions`
 
@@ -138,9 +152,15 @@ one-line change into a 200-line diff.
 Checked by `validate_chart_set`:
 
 - **`duplicate-node`** — no two charts may model the same decision.
-- **`unreachable-continue`** — at a `vs_3Bet` or `vs_4Bet` node, every hand hero
-  continues with must be a hand hero's own RFI chart opens. Hero cannot be
-  facing a 3-bet with a hand they never raised.
+- **`unreachable-continue`** — every hand hero continues with must be a hand
+  hero could actually be holding at that node. Hero cannot be facing a 3-bet
+  with a hand they never opened. The reference range depends on how hero got
+  there:
+
+  | Situation | Hero must hold |
+  |---|---|
+  | `vs_3Bet`, `vs_5Bet` | a hand from hero's own RFI chart |
+  | `vs_4Bet` | a hand from the RAISE branch of hero's `vs_RFI` chart against that villain |
 
 ## Running the validator
 

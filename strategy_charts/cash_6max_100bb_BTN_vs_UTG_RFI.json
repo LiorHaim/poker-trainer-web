@@ -8,6 +8,10 @@
     "hero_position": "BTN",
     "situation": "vs_RFI",
     "villain_position": "UTG",
+    "sizings": {
+      "open_bb": 2.5,
+      "3bet_bb": 8.0
+    },
     "explanations": {
       "RAISE": "This is a premium 3-bet. We are re-raising for value, as we're likely ahead of UTG's opening range.",
       "CALL": "This is a 'set-mine' or 'speculative' call. This hand plays well postflop in position, so we call to see a flop.",

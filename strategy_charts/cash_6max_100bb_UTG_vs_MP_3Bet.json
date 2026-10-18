@@ -8,6 +8,11 @@
     "hero_position": "UTG",
     "situation": "vs_3Bet",
     "villain_position": "MP",
+    "sizings": {
+      "open_bb": 2.5,
+      "3bet_bb": 8.0,
+      "4bet_bb": 17.6
+    },
     "explanations": {
       "RAISE": "4-bet for value with monsters. MP's 3-bet vs UTG is very strong, so we only 4-bet the nuts.",
       "CALL": "Call with hands that have good equity and playability. We're OOP but our range is very strong.",

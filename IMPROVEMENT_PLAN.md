@@ -362,6 +362,38 @@ collapsing the duplicate node families, retuning CO/BTN/SB opens and blind defen
 fix, and deleting `logic/trainer.py` (`tests/test_integration.py` currently only exercises that dead module —
 worth rewriting against the real `app.py` path when it goes).
 
+### Phase 1 — done
+
+**Chart data (§1.1–1.5).**
+
+- The `3Bet` situation is gone. `vs_RFI` covers facing an open, raise branch included; the nine duplicate
+  `*_3Bet_vs_*` charts are deleted and the schema rejects the situation outright. 52 charts → 43.
+- All 14 opening and blind-defense charts regenerated from range specs in `chart_sources/` via
+  `scripts/author_chart.py`, with the spec recorded in `metadata.source`. Every frequency is now inside the
+  reference bands and monotonic by position; `CHART_KNOWN_ISSUES.json` is empty and every `xfail` is gone.
+- Five `vs_4Bet` charts were actually describing a 5-bet spot — position order makes the other reading
+  impossible, and their own explanations said "5-bet all-in". Split into a new `vs_5Bet` situation and
+  renamed; `BTN_vs_MP_4Bet` is the one genuine `vs_4Bet` node.
+- `metadata.sizings` is required on every chart, and `metadata.source` records provenance. The authored
+  ranges are marked `"type": "authored"` — reasonable reference ranges, not solver output.
+
+**Engine (§1.5, §3.1, §3.2).**
+
+- `logic/nodes.py` is the single definition of what a situation means: who acted, for how much, what is in
+  the pot, what hero must call. This replaces an if/elif chain duplicated across `app.py`, `trainer.py` and
+  a JavaScript function, plus the hardcoded pot table in `TrainingScenario` that disagreed with all of them.
+  The dead-code comments in `scenario.py` ("This is getting complex. Let's hardcode") are gone with it.
+- Pot and to-call are computed from each chart's declared sizings, so a chart built for a 2.5bb open is
+  drilled at 2.5bb. Blinds posted by hero or the villain are no longer double-counted.
+- The raise button's label and the action description come from the server, so the UI no longer keeps its
+  own copy of what each situation means. `/api/charts` returns `situation`, replacing the substring matching
+  the study view used to guess it with.
+- `logic/trainer.py` deleted. `tests/test_integration.py` only ever exercised that dead module; it now
+  drives `app.py` through a Flask test client, with the database faked.
+
+Still open from Part 1: §1.6 (missing nodes — hero 4-betting, vs-squeeze, limps, other stack depths) and
+§1.7 (binary scoring), which are phases 3 and 4.
+
 ### Appendix — audit scripts
 
 The throwaway scripts used to produce the tables in Part 1 are now superseded by

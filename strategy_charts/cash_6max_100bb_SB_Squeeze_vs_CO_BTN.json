@@ -9,6 +9,10 @@
     "situation": "squeeze",
     "opener_position": "CO",
     "caller_position": "BTN",
+    "sizings": {
+      "open_bb": 2.5,
+      "3bet_bb": 12.0
+    },
     "explanations": {
       "RAISE": "SQUEEZE! There's dead money from the cold call. Squeeze big (14BB+) with premiums and blockers.",
       "CALL": "Calling from SB with a cold-caller behind is marginal. Only with strong implied odds hands.",

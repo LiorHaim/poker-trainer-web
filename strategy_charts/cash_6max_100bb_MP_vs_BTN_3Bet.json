@@ -8,6 +8,11 @@
     "hero_position": "MP",
     "situation": "vs_3Bet",
     "villain_position": "BTN",
+    "sizings": {
+      "open_bb": 2.5,
+      "3bet_bb": 8.0,
+      "4bet_bb": 17.6
+    },
     "explanations": {
       "RAISE": "This is a 4-Bet for value. We have a monster and want to get all the money in. BTN's 3-bet range is wide, so we are way ahead.",
       "CALL": "This is a call. Our hand is strong enough to see a flop (good equity, set-mining potential) but not strong enough to 4-bet for value. We call and play poker.",

@@ -9,6 +9,10 @@
     "situation": "squeeze",
     "opener_position": "MP",
     "caller_position": "CO",
+    "sizings": {
+      "open_bb": 2.5,
+      "3bet_bb": 12.0
+    },
     "explanations": {
       "RAISE": "Squeeze with premiums. MP's range is stronger than CO's, so be more selective with your squeeze range.",
       "CALL": "Calling is marginal from SB but can work with strong implied odds hands.",

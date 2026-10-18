@@ -9,6 +9,10 @@
     "situation": "squeeze",
     "opener_position": "BTN",
     "caller_position": "SB",
+    "sizings": {
+      "open_bb": 2.5,
+      "3bet_bb": 12.0
+    },
     "explanations": {
       "RAISE": "This is a SQUEEZE! There is a lot of dead money. We raise huge (12BB+) with our premium value hands and our best blockers (suited broadways, suited wheel aces).",
       "CALL": "We are closing the action with amazing pot odds. We call with almost any two playable cards to see a flop.",

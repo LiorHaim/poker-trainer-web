@@ -8,6 +8,11 @@
     "hero_position": "CO",
     "situation": "vs_3Bet",
     "villain_position": "BB",
+    "sizings": {
+      "open_bb": 2.5,
+      "3bet_bb": 11.0,
+      "4bet_bb": 24.2
+    },
     "explanations": {
       "RAISE": "4-bet for value and bluffs. BB 3-bets wide against CO's open, so we can defend aggressively.",
       "CALL": "Call with strong playable hands. We have position postflop against BB.",

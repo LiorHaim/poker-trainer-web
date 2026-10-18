@@ -8,6 +8,10 @@
     "hero_position": "BTN",
     "situation": "vs_RFI",
     "villain_position": "CO",
+    "sizings": {
+      "open_bb": 2.5,
+      "3bet_bb": 8.0
+    },
     "explanations": {
       "RAISE": "3-bet for value with premiums and as a bluff with suited blockers. BTN vs CO is an aggressive spot since CO opens wide.",
       "CALL": "Call with hands that play well postflop in position. We have great implied odds and can outplay IP.",

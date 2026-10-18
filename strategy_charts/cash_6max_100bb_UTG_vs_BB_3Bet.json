@@ -8,6 +8,11 @@
     "hero_position": "UTG",
     "situation": "vs_3Bet",
     "villain_position": "BB",
+    "sizings": {
+      "open_bb": 2.5,
+      "3bet_bb": 11.0,
+      "4bet_bb": 24.2
+    },
     "explanations": {
       "RAISE": "4-bet for value. BB 3-bets polarized vs UTG. Only 4-bet the absolute premium hands.",
       "CALL": "Call with strong hands. We have position postflop and can realize our equity well.",

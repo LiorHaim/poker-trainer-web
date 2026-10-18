@@ -8,6 +8,11 @@
     "hero_position": "CO",
     "situation": "vs_3Bet",
     "villain_position": "BTN",
+    "sizings": {
+      "open_bb": 2.5,
+      "3bet_bb": 8.0,
+      "4bet_bb": 17.6
+    },
     "explanations": {
       "RAISE": "4-Bet for value with premiums. 4-Bet bluff with blockers (like A5s, KQs).",
       "CALL": "Defend by calling with hands that flop well and retain equity (pocket pairs, strong suited connectors, broadways).",

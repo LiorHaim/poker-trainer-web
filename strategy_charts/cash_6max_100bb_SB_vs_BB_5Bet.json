@@ -1,17 +1,23 @@
 {
   "metadata": {
-    "chart_id": "cash_6max_100bb_CO_vs_4Bet",
-    "description": "6-Max Cash Game, 100bb deep. Hero opens from CO to 3BB, 3-bets to 9BB vs a raiser, and now faces a 4-bet to 25BB.",
+    "chart_id": "cash_6max_100bb_SB_vs_BB_5Bet",
+    "description": "6-Max Cash Game, 100bb deep. Hero opens from SB to 3BB, BB 3-bets to 10BB, Hero 4-bets to 22BB. BB 5-bets all-in. BvB war!",
     "game_type": "cash",
     "table_size": 6,
     "stack_depth": 100,
-    "hero_position": "CO",
-    "situation": "vs_4Bet",
-    "villain_position": "BTN",
+    "hero_position": "SB",
+    "situation": "vs_5Bet",
+    "villain_position": "BB",
+    "sizings": {
+      "open_bb": 2.5,
+      "3bet_bb": 11.0,
+      "4bet_bb": 24.2,
+      "5bet_bb": 100.0
+    },
     "explanations": {
-      "RAISE": "5-bet all-in with the nuts. AA/KK are always getting it in.",
-      "CALL": "Call with QQ and AKs - strong enough to continue but not quite 5-bet material always.",
-      "FOLD": "Our 3-bet range included bluffs and light value. These must fold to a 4-bet."
+      "RAISE": "Call the 5-bet shove. BvB pots can get wild, but we need the nuts to call an all-in.",
+      "CALL": "Call the shove with hands that have good equity in BvB spots.",
+      "FOLD": "Our 4-bet was a bluff or thin value. BB's 5-bet is polarized - fold everything else."
     }
   },
   "actions": {
@@ -19,12 +25,13 @@
       "AA", "KK"
     ],
     "CALL": [
-      "QQ",
-      "AKs", "AKo"
+      "QQ", "JJ",
+      "AKs", "AQs",
+      "AKo"
     ],
     "FOLD": [
-      "JJ", "TT", "99", "88", "77", "66", "55", "44", "33", "22",
-      "AQs", "AJs", "ATs", "A9s", "A8s", "A7s", "A6s", "A5s", "A4s", "A3s", "A2s",
+      "TT", "99", "88", "77", "66", "55", "44", "33", "22",
+      "AJs", "ATs", "A9s", "A8s", "A7s", "A6s", "A5s", "A4s", "A3s", "A2s",
       "KQs", "KJs", "KTs", "K9s", "K8s", "K7s", "K6s", "K5s", "K4s", "K3s", "K2s",
       "QJs", "QTs", "Q9s", "Q8s", "Q7s", "Q6s", "Q5s", "Q4s", "Q3s", "Q2s",
       "JTs", "J9s", "J8s", "J7s", "J6s", "J5s", "J4s", "J3s", "J2s",

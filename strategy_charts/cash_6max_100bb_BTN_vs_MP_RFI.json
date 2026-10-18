@@ -8,6 +8,10 @@
     "hero_position": "BTN",
     "situation": "vs_RFI",
     "villain_position": "MP",
+    "sizings": {
+      "open_bb": 2.5,
+      "3bet_bb": 8.0
+    },
     "explanations": {
       "RAISE": "This is a 3-bet for value or as a strong semi-bluff. MP's range is tighter than UTG's, so we 3-bet a bit more selectively.",
       "CALL": "This is a 'speculative' call. This hand plays well postflop in position, so we call to see a flop cheaply.",

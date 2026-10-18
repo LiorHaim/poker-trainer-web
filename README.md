@@ -6,7 +6,7 @@ Built with Flask, MongoDB, and a lo-fi themed frontend.
 
 ## Features
 
-- **43 Strategy Charts** — covers all key 6-Max 100BB spots: RFI, vs RFI (including 3-betting), vs 3-Bet, vs 4-Bet, and Squeeze
+- **43 Strategy Charts** — covers all key 6-Max 100BB spots: RFI, vs RFI (including 3-betting), vs 3-Bet, vs 4-Bet, vs 5-Bet, and Squeeze
 - **Drill Mode** — continuous random hands across all loaded charts
 - **Focus Mode** — practice a specific position or situation (e.g. "only BTN spots")
 - **Instant Feedback** — see whether your action matches the reference strategy, with a coaching explanation
@@ -25,7 +25,8 @@ All charts are for **Cash Game, 6-Max, 100BB effective stacks**:
 | RFI (open raise) | UTG, MP, CO, BTN, SB |
 | vs RFI (facing open) | BB vs all positions, SB vs BTN/CO/MP/UTG, BTN vs UTG/MP/CO, CO vs UTG/MP |
 | vs 3-Bet | UTG/MP/CO/BTN vs various 3-bettors |
-| vs 4-Bet | UTG/MP/CO/SB facing 4-bets |
+| vs 4-Bet | BTN, having 3-bet an MP open |
+| vs 5-Bet | UTG/MP/CO/BTN/SB, having opened and 4-bet |
 | Squeeze | SB & BB squeeze vs opener+caller combos |
 
 Facing an open is a single chart per spot whose RAISE branch is the 3-bet.
@@ -52,7 +53,7 @@ it. Progress:
 |---|---|---|
 | 0 | Chart schema, validation, invariant tests, CI | done |
 | 1 | Collapse duplicate decision nodes; retune opening and blind-defense ranges | done |
-| 1b | Wire per-chart sizings; fix vs-4-bet semantics; delete dead `logic/trainer.py` | in progress |
+| 1b | Wire per-chart sizings; fix vs-4-bet semantics; delete dead `logic/trainer.py` | done |
 | 2 | Deal hands only from ranges that can reach the node | planned |
 | 3 | Mixed-frequency charts and EV-loss scoring | planned |
 | 4 | Stateless scenario tokens, blueprints, rollup stats | planned |

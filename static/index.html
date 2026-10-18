@@ -514,7 +514,7 @@
                 <div class="flex flex-col gap-3">
                     <div class="flex flex-col sm:flex-row gap-3">
                         <select id="focus-pos" class="bg-black/30 text-white rounded-xl p-3 flex-1 border border-white/10 font-semibold focus:ring-2 focus:ring-emerald-500/50 focus:border-emerald-500/50 outline-none transition cursor-pointer appearance-none" aria-label="Select Focus Position"><option value="">Any Position</option><option value="BTN">Button</option><option value="BB">Big Blind</option><option value="SB">Small Blind</option><option value="CO">Cutoff</option><option value="MP">Middle Pos</option><option value="UTG">UTG</option></select>
-                        <select id="focus-situation" class="bg-black/30 text-white rounded-xl p-3 flex-1 border border-white/10 font-semibold focus:ring-2 focus:ring-emerald-500/50 focus:border-emerald-500/50 outline-none transition cursor-pointer appearance-none" aria-label="Select Situation Type"><option value="">Any Situation</option><option value="RFI">RFI (Open Raise)</option><option value="vs_RFI">vs RFI (Facing Open)</option><option value="vs_3Bet">vs 3-Bet</option><option value="vs_4Bet">vs 4-Bet</option><option value="squeeze">Squeeze</option></select>
+                        <select id="focus-situation" class="bg-black/30 text-white rounded-xl p-3 flex-1 border border-white/10 font-semibold focus:ring-2 focus:ring-emerald-500/50 focus:border-emerald-500/50 outline-none transition cursor-pointer appearance-none" aria-label="Select Situation Type"><option value="">Any Situation</option><option value="RFI">RFI (Open Raise)</option><option value="vs_RFI">vs RFI (Facing Open)</option><option value="vs_3Bet">vs 3-Bet</option><option value="vs_4Bet">vs 4-Bet</option><option value="vs_5Bet">vs 5-Bet</option><option value="squeeze">Squeeze</option></select>
                     </div>
                     <button onclick="startTraining('Focus')" class="w-full py-3 bg-white/5 hover:bg-white/10 rounded-xl font-display text-lg tracking-wider transition btn-3d border-b-gray-800 text-white shadow-md border border-white/5">TRAIN SELECTED SPOTS</button>
                 </div>
@@ -625,6 +625,7 @@
                             <option value="vs_RFI">vs RFI (Facing Open)</option>
                             <option value="vs_3Bet">vs 3-Bet</option>
                             <option value="vs_4Bet">vs 4-Bet</option>
+                            <option value="vs_5Bet">vs 5-Bet</option>
                             <option value="squeeze">Squeeze</option>
                         </select>
                         <label class="block text-[10px] text-gray-400 uppercase font-bold mb-2 tracking-[0.15em]">Select Chart</label>
@@ -957,24 +958,6 @@
             document.getElementById('pos-val').textContent = sc.hero_pos;
             document.getElementById('pot-val').textContent = sc.pot + " BB";
 
-            let actText = "Folded to you";
-            if (sc.situation === "RFI") {
-                actText = "Folded to you - Open?";
-            } else if (sc.situation === "vs_RFI" && sc.actions.length > 0) {
-                let opener = sc.actions[0];
-                actText = `${opener.pos} opens ${opener.amt}bb`;
-            } else if (sc.situation === "vs_3Bet" && sc.actions.length > 0) {
-                let threeBettor = sc.actions[0];
-                actText = `You opened, ${threeBettor.pos} 3-bets ${threeBettor.amt}bb`;
-            } else if (sc.situation === "vs_4Bet" && sc.actions.length > 0) {
-                let fourBettor = sc.actions[0];
-                actText = `You 3-bet, ${fourBettor.pos} 4-bets ${fourBettor.amt}bb`;
-            } else if (sc.situation === "squeeze" && sc.actions.length >= 2) {
-                let opener = sc.actions[0];
-                let caller = sc.actions[1];
-                actText = `${opener.pos} opens, ${caller.pos} calls`;
-            }
-
             ['UTG', 'MP', 'CO', 'BTN', 'SB', 'BB'].forEach(pos => {
                 let el = document.getElementById(`seat-${pos}`);
                 el.className = `seat seat-${pos}`;
@@ -996,15 +979,12 @@
                 if (villainSeat) villainSeat.classList.add('active-villain');
             });
 
-            document.getElementById('act-val').textContent = actText;
+            document.getElementById('act-val').textContent = sc.action_text || '';
 
+            // The action description and the raise button's meaning come from
+            // the server's node definition, so there is one source of truth.
             let callLabel = sc.to_call > 0 ? `Call (${sc.to_call.toFixed(1)})` : "Check";
-            let raiseLabel = "Raise";
-            if (sc.situation === "RFI") raiseLabel = "Open";
-            else if (sc.situation === "vs_RFI") raiseLabel = "3-Bet";
-            else if (sc.situation === "vs_3Bet") raiseLabel = "4-Bet";
-            else if (sc.situation === "vs_4Bet") raiseLabel = "5-Bet All-In";
-            else if (sc.situation === "squeeze") raiseLabel = "Squeeze";
+            let raiseLabel = sc.raise_label || "Raise";
 
             document.getElementById('btn-call').innerHTML = `${callLabel} <span class="text-[10px] md:text-xs opacity-50 font-body font-normal tracking-normal">(C)</span>`;
             document.getElementById('btn-raise').innerHTML = `${raiseLabel} <span class="text-[10px] md:text-xs opacity-50 font-body font-normal tracking-normal">(R)</span>`;
@@ -1180,23 +1160,22 @@
             let sel = document.getElementById('study-chart-select');
             sel.innerHTML = '';
 
-            const situationOrder = ['RFI', 'vs_RFI', 'vs_3Bet', 'vs_4Bet', 'squeeze'];
+            const situationOrder = ['RFI', 'vs_RFI', 'vs_3Bet', 'vs_4Bet', 'vs_5Bet', 'squeeze'];
             const situationLabels = {
                 'RFI': '--- OPEN RAISE (RFI) ---',
                 'vs_RFI': '--- FACING OPEN (vs RFI) ---',
                 'vs_3Bet': '--- FACING 3-BET ---',
                 'vs_4Bet': '--- FACING 4-BET ---',
+                'vs_5Bet': '--- FACING 5-BET ---',
                 'squeeze': '--- SQUEEZE ---'
             };
 
             let grouped = {};
             allCharts.forEach(c => {
-                let situation = 'RFI';
-                if (c.key.includes('Squeeze') || c.key.includes('squeeze')) situation = 'squeeze';
-                else if (c.key.includes('vs_4Bet') || c.key.includes('_4Bet')) situation = 'vs_4Bet';
-                else if (c.key.includes('vs_3Bet') || c.key.includes('_3Bet')) situation = 'vs_3Bet';
-                else if (c.key.includes('vs_') && c.key.includes('_RFI')) situation = 'vs_RFI';
-                else if (c.key.includes('_RFI')) situation = 'RFI';
+                // Supplied by /api/charts. This used to be guessed from the
+                // chart key with substring matching, which silently misfiled a
+                // chart whenever a key was renamed.
+                let situation = c.situation || 'RFI';
 
                 if (!filter || situation === filter) {
                     if (!grouped[situation]) grouped[situation] = [];

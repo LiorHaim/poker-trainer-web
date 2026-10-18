@@ -8,6 +8,11 @@
     "hero_position": "CO",
     "situation": "vs_3Bet",
     "villain_position": "SB",
+    "sizings": {
+      "open_bb": 2.5,
+      "3bet_bb": 11.0,
+      "4bet_bb": 24.2
+    },
     "explanations": {
       "RAISE": "4-bet for value and some bluffs. SB 3-bets polarized, so we can 4-bet a wider range.",
       "CALL": "Call with hands that have good postflop equity. We'll have position over SB.",

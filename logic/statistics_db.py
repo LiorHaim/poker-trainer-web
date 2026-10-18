@@ -1,7 +1,7 @@
-from pymongo import MongoClient
-from werkzeug.security import generate_password_hash, check_password_hash
-import os
 import logging
+
+from pymongo import MongoClient
+from werkzeug.security import check_password_hash, generate_password_hash
 
 logger = logging.getLogger(__name__)
 
@@ -12,14 +12,14 @@ class StatisticsManagerDB:
             self.db = self.client.get_database()
             self.history = self.db.history
             self.users = self.db.users
-            
+
             # Create indexes for better query performance
             self._create_indexes()
             logger.info("MongoDB connection established and indexes created")
         except Exception as e:
             logger.error(f"Failed to connect to MongoDB: {e}", exc_info=True)
             raise
-    
+
     def _create_indexes(self):
         """Create database indexes for frequently queried fields"""
         try:
@@ -38,7 +38,7 @@ class StatisticsManagerDB:
         try:
             if self.users.find_one({"username": username}):
                 return False # User exists
-            
+
             self.users.insert_one({
                 "username": username,
                 "password": generate_password_hash(password)
@@ -90,7 +90,7 @@ class StatisticsManagerDB:
             ])
             res = list(stats)
             if not res: return 10000
-            
+
             correct = res[0]['correct']
             total = res[0]['total']
             incorrect = total - correct

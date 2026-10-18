@@ -3,11 +3,11 @@ Pro-quality Sound Effect Generator for Poker Trainer.
 Generates all game SFX using synthesis with ADSR envelopes,
 harmonics, noise layers, and stereo imaging. Pure Python, no deps.
 """
-import wave
 import math
-import struct
 import os
 import random
+import struct
+import wave
 
 ASSETS_DIR = "assets"
 SAMPLE_RATE = 44100
@@ -59,7 +59,7 @@ def mix(*tracks, volumes=None):
         volumes = [1.0] * len(tracks)
     max_len = max(len(t) for t in tracks)
     out = [0.0] * max_len
-    for track, vol in zip(tracks, volumes):
+    for track, vol in zip(tracks, volumes, strict=False):
         for i in range(len(track)):
             out[i] += track[i] * vol
     return out
@@ -71,7 +71,7 @@ def normalize(samples, peak=0.85):
 
 
 def apply_envelope(samples, envelope):
-    return [s * e for s, e in zip(samples, envelope)]
+    return [s * e for s, e in zip(samples, envelope, strict=False)]
 
 
 def concat(*segments):

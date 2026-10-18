@@ -1,16 +1,18 @@
 # ... (Imports remain the same)
-from .scenario import TrainingScenario, get_random_hand, Position, Action, TrainingResult, PreflopAction
-from .strategy import StrategyManager
-from .statistics_db import StatisticsManagerDB
 import random
-from typing import Union, List, Dict, Any
+from typing import Any
+
+from .scenario import Action, Position, PreflopAction, TrainingResult, TrainingScenario, get_random_hand
+from .statistics_db import StatisticsManagerDB
+from .strategy import StrategyManager
+
 
 class TrainingEngine:
     def __init__(self, strategy_manager: StrategyManager, stats_manager: StatisticsManagerDB):
         self.strategy_manager = strategy_manager
         self.stats_manager = stats_manager
-        self.current_scenario: Union[TrainingScenario, None] = None
-        self.available_scenarios: List[Dict[str, Any]] = []
+        self.current_scenario: TrainingScenario | None = None
+        self.available_scenarios: list[dict[str, Any]] = []
         self.game_type_prefix = "cash"
 
     def configure_training(self, settings: dict):
@@ -22,25 +24,25 @@ class TrainingEngine:
         mode = settings.get("training_mode", "Drill")
         focus_pos = settings.get("focus_position")
         focus_situation = settings.get("focus_situation")
-        if hasattr(focus_pos, 'value'): focus_pos = focus_pos.value 
+        if hasattr(focus_pos, 'value'): focus_pos = focus_pos.value
 
         for key, meta in self.strategy_manager.chart_metadata.items():
             if meta.get("game_type") != self.game_type_prefix: continue
             if int(meta.get("table_size", 0)) != table_size: continue
             if int(meta.get("stack_depth", 0)) not in stack_depths: continue
-            
+
             # Filter by position if specified
             if mode == "Focus" and focus_pos and str(meta.get("hero_position")) != str(focus_pos): continue
-            
+
             # Filter by situation if specified
             if mode == "Focus" and focus_situation and str(meta.get("situation")) != str(focus_situation): continue
-            
+
             meta['chart_key'] = key
             self.available_scenarios.append(meta)
 
-    def get_next_scenario(self) -> Union[TrainingScenario, None]:
+    def get_next_scenario(self) -> TrainingScenario | None:
         # ... (This method is unchanged, uses current_scenario logic) ...
-        if not self.available_scenarios: return None 
+        if not self.available_scenarios: return None
         scenario_meta = random.choice(self.available_scenarios)
         hand = get_random_hand()
         chart_key = scenario_meta["chart_key"]
@@ -74,7 +76,7 @@ class TrainingEngine:
         except (KeyError, ValueError):
             situation = "RFI"
             actions_before_hero = []
-        
+
         self.current_scenario = TrainingScenario(
             table_size=int(scenario_meta["table_size"]),
             effective_stack_bb=int(scenario_meta["stack_depth"]),
@@ -87,16 +89,16 @@ class TrainingEngine:
         return self.current_scenario
 
     # --- MODIFIED: Now gets user_id from Flask App context or passed arg?
-    # Actually, simpler to NOT log here and let App.py do it, 
+    # Actually, simpler to NOT log here and let App.py do it,
     # OR pass username. Let's remove the log_decision call here to keep Logic pure.
-    def submit_user_action(self, user_action: Action) -> Union[TrainingResult, None]:
+    def submit_user_action(self, user_action: Action) -> TrainingResult | None:
         if not self.current_scenario: return None
         chart_key = self.current_scenario.chart_key
         compiled_chart = self.strategy_manager.get_compiled_chart(chart_key)
-        
+
         if not chart_key or not compiled_chart:
             return TrainingResult(self.current_scenario, user_action, Action.FOLD, "Error", False, {})
-        
+
         rec_data = self.strategy_manager.get_recommended_action(chart_key, self.current_scenario.hero_hand)
         if not rec_data: rec_data = {"action": Action.FOLD, "explanation": "Error"}
 
@@ -108,8 +110,8 @@ class TrainingEngine:
             is_correct=(user_action == rec_data["action"]),
             compiled_chart=compiled_chart
         )
-        
-        # REMOVED: self.stats_manager.log_decision(result) 
+
+        # REMOVED: self.stats_manager.log_decision(result)
         # (We will log this in app.py where we know the username!)
-        
+
         return result

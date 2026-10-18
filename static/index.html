@@ -682,6 +682,7 @@
 
     <script>
         let currentScenario = null;
+        let sessionToken = null;
         let musicPlaylist = [];
         let currentTrackIndex = 0;
         let handCount = 0;
@@ -939,6 +940,7 @@
         async function startTraining(mode) {
             playSfx('sfx-click');
             handCount = 0; streak = 0; bestStreak = 0; sessionCorrect = 0; sessionTotal = 0;
+            sessionToken = null;
             document.getElementById('hand-count').textContent = '0';
             document.getElementById('session-accuracy').textContent = '-';
             document.getElementById('streak-display').classList.add('hidden');
@@ -953,6 +955,9 @@
 
         function renderScenario(sc) {
             currentScenario = sc;
+            // The server is stateless: this signed token is what identifies the
+            // hand in play, so it has to be sent back with the answer.
+            sessionToken = sc.token || sessionToken;
             handCount++;
             document.getElementById('hand-count').textContent = handCount;
             document.getElementById('pos-val').textContent = sc.hero_pos;
@@ -1019,7 +1024,7 @@
             fb.innerHTML = '<div class="flex flex-col md:flex-row gap-6"><div class="flex-1 space-y-4"><div class="skeleton h-10 w-1/3"></div><div class="skeleton h-20 w-full"></div><div class="skeleton h-12 w-full"></div></div><div class="flex-1"><div class="skeleton h-64 w-full"></div></div></div>';
 
             const oldBankroll = parseInt(document.getElementById('bankroll').textContent.replace(/[$,]/g, '')) || 0;
-            let result = await apiCall('act', {action: action});
+            let result = await apiCall('act', {action: action, token: sessionToken});
 
             if (!result) {
                 fb.classList.add('hidden');
@@ -1090,7 +1095,7 @@
 
         async function nextHand() {
             playSfx('sfx-click');
-            let data = await apiCall('next');
+            let data = await apiCall('next', {token: sessionToken});
             if (data) renderScenario(data);
         }
 

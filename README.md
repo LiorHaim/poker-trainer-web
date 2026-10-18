@@ -55,8 +55,8 @@ it. Progress:
 | 1 | Collapse duplicate decision nodes; retune opening and blind-defense ranges | done |
 | 1b | Wire per-chart sizings; fix vs-4-bet semantics; delete dead `logic/trainer.py` | done |
 | 2 | Deal hands only from ranges that can reach the node | done |
-| 3 | Mixed-frequency charts and EV-loss scoring | planned |
-| 4 | Stateless scenario tokens, blueprints, rollup stats | planned |
+| 3 | Mixed-frequency charts and EV-loss scoring | blocked on solver data |
+| 4 | Stateless scenario tokens, rollup stats, container hardening | done |
 | 5 | Frontend rebuild | planned |
 
 Range frequencies are asserted against reference bands in
@@ -64,6 +64,18 @@ Range frequencies are asserted against reference bands in
 unnoticed. Strategic gaps still outstanding are tracked there as `xfail` tests,
 which turn into build failures the moment they are fixed and the marker is
 stale.
+
+## How a training session works
+
+The server keeps nothing between requests. `/api/start` returns the first hand
+plus a signed token describing the session's filters and the live hand;
+`/api/act` and `/api/next` send that token back. This replaced a per-process
+dict that made the app correct only at a single worker — a hand started on one
+worker could not be answered on another — and that grew without bound.
+
+A token is bound to the account it was issued to and expires after 12 hours.
+It can still be replayed, so the same hand can be answered twice; the dict
+allowed that too, and closing it needs a shared nonce store.
 
 ## Tech Stack
 
@@ -140,9 +152,9 @@ docker run -p 8080:8080 -e MONGO_URI="mongodb://host.docker.internal:27017/poker
 | `POST` | `/api/auth/login` | Log in |
 | `POST` | `/api/auth/logout` | Log out |
 | `GET` | `/api/auth/me` | Check current session |
-| `POST` | `/api/start` | Start a training session |
-| `POST` | `/api/act` | Submit an action (FOLD/CALL/RAISE) |
-| `GET` | `/api/next` | Get the next hand |
+| `POST` | `/api/start` | Start a training session; returns the first hand and a signed token |
+| `POST` | `/api/act` | Submit an action (FOLD/CALL/RAISE) with the hand's token |
+| `POST` | `/api/next` | Get the next hand (send the current token) |
 | `GET` | `/api/statistics` | Get user stats |
 | `POST` | `/api/statistics/clear` | Reset user stats |
 | `GET` | `/api/leaderboard` | Get the leaderboard |
@@ -155,10 +167,11 @@ docker run -p 8080:8080 -e MONGO_URI="mongodb://host.docker.internal:27017/poker
 | Variable | Default | Description |
 |----------|---------|-------------|
 | `MONGO_URI` | `mongodb://localhost:27017/poker` | MongoDB connection string |
-| `SECRET_KEY` | Auto-generated | Flask session secret (required in production) |
+| `SECRET_KEY` | Auto-generated | Signs session cookies **and training tokens**. Required in production, and every worker/replica must share the same value |
 | `FLASK_ENV` | — | Set to `production` for secure cookies |
 | `FLASK_DEBUG` | `0` | Set to `1` for debug mode |
 | `CHART_VALIDATION` | — | Set to `strict` to refuse to start if any strategy chart fails validation |
+| `GUNICORN_WORKERS` | `2` | Worker processes in the container |
 
 ## License
 

@@ -220,7 +220,7 @@ def _validate_metadata(chart_key: str, meta: dict) -> list[ChartIssue]:
         for key, value in sizings.items():
             if key not in SIZING_KEYS:
                 warn("unknown-sizing", f"metadata.sizings.{key} is not a recognised key {SIZING_KEYS}")
-            elif isinstance(value, bool) or not isinstance(value, (int, float)) or value <= 0:
+            elif isinstance(value, bool) or not isinstance(value, int | float) or value <= 0:
                 err("bad-sizing-value", f"metadata.sizings.{key} must be a positive number, got {value!r}")
 
     return issues

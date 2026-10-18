@@ -121,6 +121,14 @@ pip install -r requirements-dev.txt
 make check          # lint + chart validation + tests, same as CI
 ```
 
+### Try it without installing anything
+
+If a deployment is already running, open its route:
+
+```bash
+oc project poker-trainer && make url
+```
+
 ### Run with Docker
 
 ```bash
@@ -138,7 +146,8 @@ docker run -p 8080:8080 -e MONGO_URI="mongodb://host.docker.internal:27017/poker
 | `make lint` | Run ruff |
 | `make validate-charts` | Validate every strategy chart against the schema |
 | `make dev-install` | Install dev dependencies (pytest, ruff) |
-| `make deploy` | Build and deploy to OpenShift |
+| `make deploy` | Build and deploy to OpenShift (generates `SECRET_KEY` on first run) |
+| `make ensure-secret` | Create the `SECRET_KEY` secret if it does not exist |
 | `make update` | Rebuild and redeploy after code changes |
 | `make logs` | Tail application logs |
 | `make url` | Print the live application URL |

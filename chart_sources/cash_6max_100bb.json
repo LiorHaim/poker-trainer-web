@@ -22,7 +22,9 @@
       "description": "6-Max Cash, 100bb. Folded to Hero in UTG. Open to 2.5bb or fold.",
       "hero_position": "UTG",
       "situation": "RFI",
-      "sizings": { "open_bb": 2.5 },
+      "sizings": {
+        "open_bb": 2.5
+      },
       "ranges": {
         "RAISE": "22+, ATs+, A5s-A4s, KTs+, QTs+, JTs, T9s, 98s, 87s, 76s, ATo+, KQo"
       },
@@ -36,7 +38,9 @@
       "description": "6-Max Cash, 100bb. Folded to Hero in MP. Open to 2.5bb or fold.",
       "hero_position": "MP",
       "situation": "RFI",
-      "sizings": { "open_bb": 2.5 },
+      "sizings": {
+        "open_bb": 2.5
+      },
       "ranges": {
         "RAISE": "22+, A9s+, A5s-A2s, K9s+, Q9s+, J9s+, T8s+, 97s+, 87s, 76s, 65s, ATo+, KJo+, QJo"
       },
@@ -50,7 +54,9 @@
       "description": "6-Max Cash, 100bb. Folded to Hero in CO. Open to 2.5bb or fold.",
       "hero_position": "CO",
       "situation": "RFI",
-      "sizings": { "open_bb": 2.5 },
+      "sizings": {
+        "open_bb": 2.5
+      },
       "ranges": {
         "RAISE": "22+, A2s+, K7s+, Q8s+, J8s+, T8s+, 97s+, 86s+, 75s+, 65s, 54s, A9o+, KTo+, QTo+, JTo"
       },
@@ -64,7 +70,9 @@
       "description": "6-Max Cash, 100bb. Folded to Hero on the Button. Open to 2.5bb or fold.",
       "hero_position": "BTN",
       "situation": "RFI",
-      "sizings": { "open_bb": 2.5 },
+      "sizings": {
+        "open_bb": 2.5
+      },
       "ranges": {
         "RAISE": "22+, A2s+, K2s+, Q4s+, J6s+, T6s+, 95s+, 85s+, 74s+, 64s+, 53s+, 43s, A2o+, K8o+, Q9o+, J9o+, T9o, 98o"
       },
@@ -78,7 +86,9 @@
       "description": "6-Max Cash, 100bb. Folded to Hero in the SB. Open to 3bb or fold (no limping strategy).",
       "hero_position": "SB",
       "situation": "RFI",
-      "sizings": { "open_bb": 3.0 },
+      "sizings": {
+        "open_bb": 3.0
+      },
       "ranges": {
         "RAISE": "22+, A2s+, K2s+, Q4s+, J6s+, T6s+, 96s+, 86s+, 75s+, 64s+, 54s, A2o+, K7o+, Q9o+, J9o+, T9o, 98o"
       },
@@ -87,14 +97,16 @@
         "FOLD": "Out of position against a Big Blind who defends very wide. Hands that cannot make a strong top pair or a real draw lose money even against a single caller."
       }
     },
-
     {
       "chart_id": "cash_6max_100bb_BB_vs_UTG_RFI",
       "description": "6-Max Cash, 100bb. UTG opens to 2.5bb, folded to Hero in the BB. 3-bet to 11bb, call 1.5bb more, or fold.",
       "hero_position": "BB",
       "situation": "vs_RFI",
       "villain_position": "UTG",
-      "sizings": { "open_bb": 2.5, "3bet_bb": 11.0 },
+      "sizings": {
+        "open_bb": 2.5,
+        "3bet_bb": 11.0
+      },
       "ranges": {
         "RAISE": "QQ+, AKs, AQs, AKo, A5s-A4s, KQs",
         "DEFEND": "22+, A2s+, K2s+, Q5s+, J7s+, T7s+, 96s+, 86s+, 75s+, 65s, 54s, A7o+, KTo+, QTo+, JTo, T9o"
@@ -111,7 +123,10 @@
       "hero_position": "BB",
       "situation": "vs_RFI",
       "villain_position": "MP",
-      "sizings": { "open_bb": 2.5, "3bet_bb": 11.0 },
+      "sizings": {
+        "open_bb": 2.5,
+        "3bet_bb": 11.0
+      },
       "ranges": {
         "RAISE": "JJ+, AQs+, AKo, A5s-A3s, KQs, KJs, 76s, 65s",
         "DEFEND": "22+, A2s+, K2s+, Q2s+, J5s+, T6s+, 95s+, 85s+, 74s+, 64s+, 53s+, A7o+, K9o+, Q9o+, J9o+, T9o, 98o"
@@ -128,7 +143,10 @@
       "hero_position": "BB",
       "situation": "vs_RFI",
       "villain_position": "CO",
-      "sizings": { "open_bb": 2.5, "3bet_bb": 11.0 },
+      "sizings": {
+        "open_bb": 2.5,
+        "3bet_bb": 11.0
+      },
       "ranges": {
         "RAISE": "TT+, AJs+, AQo+, KQs, KJs, QJs, A5s-A2s, K9s, T9s, 98s, 87s, 76s, 65s",
         "DEFEND": "22+, A2s+, K2s+, Q2s+, J3s+, T5s+, 94s+, 84s+, 74s+, 63s+, 53s+, 43s, A2o+, K9o+, Q9o+, J9o+, T9o, 98o"
@@ -145,7 +163,10 @@
       "hero_position": "BB",
       "situation": "vs_RFI",
       "villain_position": "BTN",
-      "sizings": { "open_bb": 2.5, "3bet_bb": 11.0 },
+      "sizings": {
+        "open_bb": 2.5,
+        "3bet_bb": 11.0
+      },
       "ranges": {
         "RAISE": "99+, AJs+, AJo+, KQs, KJs, QJs, JTs, A5s-A2s, K9s-K7s, Q9s, J9s, T8s, 97s, 86s, 75s, 65s, 54s",
         "DEFEND": "22+, A2s+, K2s+, Q2s+, J4s+, T5s+, 94s+, 84s+, 74s+, 63s+, 53s+, 43s, A2o+, K5o+, Q8o+, J8o+, T8o+, 97o+, 87o, 76o, 65o"
@@ -162,7 +183,10 @@
       "hero_position": "BB",
       "situation": "vs_RFI",
       "villain_position": "SB",
-      "sizings": { "open_bb": 3.0, "3bet_bb": 12.0 },
+      "sizings": {
+        "open_bb": 3.0,
+        "3bet_bb": 12.0
+      },
       "ranges": {
         "RAISE": "88+, ATs+, ATo+, KQs, KJs, KTs, QJs, QTs, JTs, KQo, A9s-A2s, K9s-K6s, Q9s, J9s, T8s, 97s, 86s, 75s, 65s, 54s",
         "DEFEND": "22+, A2s+, K2s+, Q2s+, J2s+, T4s+, 94s+, 84s+, 73s+, 63s+, 53s+, 43s, A2o+, K2o+, Q5o+, J7o+, T8o+, 97o+, 87o, 76o, 65o, 54o"
@@ -179,7 +203,10 @@
       "hero_position": "SB",
       "situation": "vs_RFI",
       "villain_position": "UTG",
-      "sizings": { "open_bb": 2.5, "3bet_bb": 11.0 },
+      "sizings": {
+        "open_bb": 2.5,
+        "3bet_bb": 11.0
+      },
       "ranges": {
         "RAISE": "QQ+, AKs, AQs, AKo, A5s-A4s",
         "DEFEND": "QQ+, AKs, AQs, AKo, A5s-A4s, JJ-55, AJs, ATs, KQs, KJs, KTs, QJs, QTs, JTs, T9s, 98s"
@@ -196,7 +223,10 @@
       "hero_position": "SB",
       "situation": "vs_RFI",
       "villain_position": "MP",
-      "sizings": { "open_bb": 2.5, "3bet_bb": 11.0 },
+      "sizings": {
+        "open_bb": 2.5,
+        "3bet_bb": 11.0
+      },
       "ranges": {
         "RAISE": "JJ+, AQs+, AKo, A5s-A3s, KQs",
         "DEFEND": "JJ+, AQs+, AKo, A5s-A3s, KQs, TT-44, AJs, ATs, A9s, KJs, KTs, K9s, QJs, QTs, JTs, J9s, T9s, 98s, 87s, AQo, AJo"
@@ -213,7 +243,10 @@
       "hero_position": "SB",
       "situation": "vs_RFI",
       "villain_position": "CO",
-      "sizings": { "open_bb": 2.5, "3bet_bb": 11.0 },
+      "sizings": {
+        "open_bb": 2.5,
+        "3bet_bb": 11.0
+      },
       "ranges": {
         "RAISE": "TT+, AJs+, AQo+, KQs, KJs, A5s-A2s, QJs, JTs, T9s, 98s",
         "DEFEND": "TT+, AJs+, AQo+, KQs, KJs, A5s-A2s, QJs, JTs, T9s, 98s, 99-22, ATs, A9s-A6s, KTs, K9s, QTs, Q9s, J9s, T8s, 87s, 76s, AJo, ATo, KQo"
@@ -230,7 +263,10 @@
       "hero_position": "SB",
       "situation": "vs_RFI",
       "villain_position": "BTN",
-      "sizings": { "open_bb": 2.5, "3bet_bb": 11.0 },
+      "sizings": {
+        "open_bb": 2.5,
+        "3bet_bb": 11.0
+      },
       "ranges": {
         "RAISE": "88+, ATs+, AJo+, KQs, KJs, KTs, QJs, QTs, JTs, KQo, A9s-A2s, K9s, Q9s, J9s, T9s, 98s, 87s, 76s, 65s",
         "DEFEND": "88+, ATs+, AJo+, KQs, KJs, KTs, QJs, QTs, JTs, KQo, A9s-A2s, K9s, Q9s, J9s, T9s, 98s, 87s, 76s, 65s, 77-22, K8s-K2s, Q8s-Q6s, J8s, J7s, T8s, T7s, 97s, 86s, 54s, ATo, KJo, KTo, QJo, JTo"
@@ -239,6 +275,48 @@
         "RAISE": "The Button's 45% opening range is the widest we face, so this is the widest 3-betting range we have. Out of position with the BB behind, taking the pot down now or playing with the initiative is worth far more than flatting.",
         "CALL": "A small set of hands that flop well enough to defend without 3-betting. Everything else that continues should raise.",
         "FOLD": "Wide as the Button's range is, calling out of position with the Big Blind still to act needs a real hand. Fold the rest rather than flat them."
+      }
+    },
+    {
+      "chart_id": "cash_6max_100bb_MP_vs_CO_3Bet",
+      "description": "6-Max Cash, 100bb. Hero opens MP to 2.5bb, CO 3-bets to 8bb. 4-bet to 17.6bb, call, or fold.",
+      "hero_position": "MP",
+      "situation": "vs_3Bet",
+      "villain_position": "CO",
+      "sizings": {
+        "open_bb": 2.5,
+        "3bet_bb": 8.0,
+        "4bet_bb": 17.6
+      },
+      "ranges": {
+        "RAISE": "QQ+, AKs, AKo, A5s-A4s",
+        "DEFEND": "QQ+, AKs, AKo, A5s-A4s, JJ-88, AQs, AJs, KQs, AQo"
+      },
+      "explanations": {
+        "RAISE": "4-bet the hands that want stacks in against a CO 3-betting range, plus the suited wheel aces as bluffs - they block AA and AK and still flop a draw when called.",
+        "CALL": "Hands too strong to fold but not strong enough to play a 4-bet pot out of position. We keep the pot small and let CO's bluffs keep betting.",
+        "FOLD": "Most of the opening range. Out of position against a 3-bet, a hand needs real equity to continue, and the bottom of an MP open does not have it."
+      }
+    },
+    {
+      "chart_id": "cash_6max_100bb_SB_vs_BB_3Bet",
+      "description": "6-Max Cash, 100bb. Hero opens SB to 3bb, BB 3-bets to 12bb. 4-bet to 26bb, call, or fold.",
+      "hero_position": "SB",
+      "situation": "vs_3Bet",
+      "villain_position": "BB",
+      "sizings": {
+        "open_bb": 3.0,
+        "3bet_bb": 12.0,
+        "4bet_bb": 26.0
+      },
+      "ranges": {
+        "RAISE": "JJ+, AQs, AKs, AKo, A5s-A3s, KQs",
+        "DEFEND": "JJ+, AQs, AKs, AKo, A5s-A3s, KQs, TT-55, AJs, ATs, KJs, KTs, QJs, QTs, JTs, T9s, 98s, AQo, AJo, KQo"
+      },
+      "explanations": {
+        "RAISE": "Blind versus blind, so BB 3-bets very wide and we can 4-bet for value with less than usual. The suited wheel aces and KQs are the bluffs.",
+        "CALL": "We opened a wide range and BB is attacking it, so we defend a wide band of pairs, suited broadways and connectors rather than folding our way out of the pot.",
+        "FOLD": "The bottom of a 43% opening range. Wide as BB's 3-bet is, these hands cannot profitably call out of position."
       }
     }
   ]

@@ -9,7 +9,7 @@ from collections import defaultdict
 from flask import Flask, jsonify, request, send_from_directory, session
 
 from logic.nodes import build_scenario
-from logic.scenario import Action, TrainingResult, get_random_hand
+from logic.scenario import Action, TrainingResult
 from logic.statistics_db import StatisticsManagerDB
 from logic.strategy import StrategyManager
 
@@ -115,7 +115,10 @@ def generate_scenario(available_scenarios):
         return None
     scenario_meta = random.choice(available_scenarios)
     try:
-        return build_scenario(scenario_meta, get_random_hand(), scenario_meta["chart_key"])
+        chart_key = scenario_meta["chart_key"]
+        # Deal from the range that can actually reach this node, not the deck.
+        hand = strategy_mgr.sampler.deal(chart_key)
+        return build_scenario(scenario_meta, hand, chart_key)
     except (KeyError, ValueError) as e:
         # Reaching here means a chart passed validation but has no node
         # definition, which is a bug rather than a user-visible condition.

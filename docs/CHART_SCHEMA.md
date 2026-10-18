@@ -157,10 +157,20 @@ Checked by `validate_chart_set`:
   with a hand they never opened. The reference range depends on how hero got
   there:
 
-  | Situation | Hero must hold |
-  |---|---|
-  | `vs_3Bet`, `vs_5Bet` | a hand from hero's own RFI chart |
-  | `vs_4Bet` | a hand from the RAISE branch of hero's `vs_RFI` chart against that villain |
+  | Situation | Hero got here by | Reference range |
+  |---|---|---|
+  | `vs_3Bet` | opening | RAISE branch of hero's `RFI` chart |
+  | `vs_4Bet` | 3-betting | RAISE branch of hero's `vs_RFI` chart vs that villain |
+  | `vs_5Bet` | opening, then 4-betting | RAISE branch of hero's `vs_3Bet` chart vs that villain |
+
+- **`imprecise-prior-range`** / **`no-prior-range`** — warnings, not errors. The
+  chart that would define hero's range at this node does not exist, so the
+  trainer falls back to a looser one (or the whole deck) and will deal hands
+  hero would not actually hold there. Adding the missing chart clears it.
+
+The same definition drives the scenario sampler, so the validator and the
+trainer cannot disagree about what hero can be holding — see
+`chart_schema.prior_range_keys`.
 
 ## Running the validator
 

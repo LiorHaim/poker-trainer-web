@@ -354,6 +354,66 @@ def _seat(meta: dict) -> tuple:
     return (meta.get("game_type"), meta.get("table_size"), meta.get("stack_depth"), meta.get("hero_position"))
 
 
+def prior_range_keys(meta: dict) -> tuple[tuple, ...]:
+    """
+    Which earlier decisions determine the hands hero can hold at this node,
+    most precise first.
+
+    Hero only arrives at a `vs_3Bet` node by opening, at `vs_4Bet` by 3-betting,
+    and at `vs_5Bet` by opening *and then* 4-betting - so at those nodes hero's
+    hand comes from that earlier range rather than from the whole deck. Returns
+    an empty tuple where hero has not acted yet and can hold anything.
+
+    `vs_5Bet` lists hero's opening range as a second choice: looser than the
+    4-betting range, but far better than the whole deck, and it keeps the node
+    playable when no `vs_3Bet` chart defines the 4-bet.
+
+    Used by the reachability check and by the scenario sampler, so the validator
+    and the trainer cannot disagree about what hero can be holding.
+    """
+    situation = meta.get("situation")
+    seat = _seat(meta)
+    villain = meta.get("villain_position")
+    if situation == "vs_3Bet":
+        return (("opens", *seat),)
+    if situation == "vs_4Bet":
+        return (("three_bets", *seat, villain),)
+    if situation == "vs_5Bet":
+        return (("four_bets", *seat, villain), ("opens", *seat))
+    return ()
+
+
+#: Human-readable name for each kind of prior range, for error messages.
+PRIOR_RANGE_NAMES = {"opens": "opens", "three_bets": "3-bets", "four_bets": "4-bets"}
+
+
+def index_prior_ranges(charts: dict[str, dict]) -> dict[tuple, tuple[str, set[str]]]:
+    """Map each prior-range key to the chart that defines it and its raising hands."""
+    index: dict[tuple, tuple[str, set[str]]] = {}
+    for key, data in charts.items():
+        meta = data.get("metadata", {})
+        seat = _seat(meta)
+        situation = meta.get("situation")
+        if situation == "RFI":
+            index[("opens", *seat)] = (key, raising_hands(data))
+        elif situation == "vs_RFI":
+            index[("three_bets", *seat, meta.get("villain_position"))] = (key, raising_hands(data))
+        elif situation == "vs_3Bet":
+            index[("four_bets", *seat, meta.get("villain_position"))] = (key, raising_hands(data))
+    return index
+
+
+def resolve_prior_range(
+    meta: dict, index: dict[tuple, tuple[str, set[str]]]
+) -> tuple[tuple, str, set[str]] | None:
+    """The first prior range that is actually defined, as (key, chart key, hands)."""
+    for candidate in prior_range_keys(meta):
+        found = index.get(candidate)
+        if found and found[1]:
+            return (candidate, *found)
+    return None
+
+
 def validate_chart_set(charts: dict[str, dict]) -> list[ChartIssue]:
     """
     Checks that only make sense across the whole set:
@@ -364,21 +424,12 @@ def validate_chart_set(charts: dict[str, dict]) -> list[ChartIssue]:
     """
     issues: list[ChartIssue] = []
     by_node: dict[tuple, list[str]] = {}
-    #: (seat) -> (chart key, hands hero opens)
-    opened_by_seat: dict[tuple, tuple[str, set[str]]] = {}
-    #: (seat, villain) -> (chart key, hands hero 3-bets)
-    three_bet_by_seat: dict[tuple, tuple[str, set[str]]] = {}
+    prior_ranges = index_prior_ranges(charts)
 
     for key, data in charts.items():
-        meta = data.get("metadata", {})
-        node = decision_node_id(meta)
+        node = decision_node_id(data.get("metadata", {}))
         if node is not None:
             by_node.setdefault(node, []).append(key)
-        seat = _seat(meta)
-        if meta.get("situation") == "RFI":
-            opened_by_seat[seat] = (key, raising_hands(data))
-        elif meta.get("situation") == "vs_RFI":
-            three_bet_by_seat[(*seat, meta.get("villain_position"))] = (key, raising_hands(data))
 
     for _node, keys in sorted(by_node.items(), key=lambda kv: kv[1]):
         if len(keys) > 1:
@@ -396,33 +447,37 @@ def validate_chart_set(charts: dict[str, dict]) -> list[ChartIssue]:
 
     for key, data in sorted(charts.items()):
         meta = data.get("metadata", {})
-        situation = meta.get("situation")
-        seat = _seat(meta)
+        candidates = prior_range_keys(meta)
+        if not candidates:
+            continue  # hero has not acted; any hand can be here
 
-        # How hero got to this node determines which range they must hold.
-        if situation in ("vs_3Bet", "vs_5Bet"):
-            # Hero opened the pot.
-            prior = opened_by_seat.get(seat)
-            description = f"{seat[3]} never opens"
-        elif situation == "vs_4Bet":
-            # Hero 3-bet over someone else's open.
-            prior = three_bet_by_seat.get((*seat, meta.get("villain_position")))
-            description = f"{seat[3]} never 3-bets vs {meta.get('villain_position')}"
-        else:
-            continue
-
-        if prior is None:
+        resolved = resolve_prior_range(meta, prior_ranges)
+        if resolved is None:
             issues.append(
                 ChartIssue(
                     key,
                     "no-prior-range",
                     WARNING,
-                    f"no chart defines how {seat[3]} reaches this node, cannot check reachability",
+                    f"no chart defines how {meta.get('hero_position')} reaches this node, so "
+                    f"scenarios are dealt from the whole deck and most will be spots hero "
+                    f"cannot be in",
                 )
             )
             continue
 
-        prior_key, prior_hands = prior
+        used, prior_key, prior_hands = resolved
+        if used != candidates[0]:
+            issues.append(
+                ChartIssue(
+                    key,
+                    "imprecise-prior-range",
+                    WARNING,
+                    f"nothing defines hero's {PRIOR_RANGE_NAMES[candidates[0][0]]} range for this "
+                    f"spot, falling back to {prior_key}; scenarios will include hands hero would "
+                    f"not actually have here",
+                )
+            )
+
         unreachable = continuing_hands(data) - prior_hands
         if unreachable:
             issues.append(
@@ -430,7 +485,8 @@ def validate_chart_set(charts: dict[str, dict]) -> list[ChartIssue]:
                     key,
                     "unreachable-continue",
                     ERROR,
-                    f"continues with {_sample(unreachable)}, which {description} ({prior_key})",
+                    f"continues with {_sample(unreachable)}, which {prior_key} never "
+                    f"{PRIOR_RANGE_NAMES[used[0]]}",
                 )
             )
 

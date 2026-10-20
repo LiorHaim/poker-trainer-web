@@ -1,0 +1,79 @@
+{
+  "metadata": {
+    "chart_id": "cash_6max_40bb_UTG_vs_BB_3Bet",
+    "description": "6-Max Cash, 40bb. Hero opens UTG to 2.5bb, BB 3-bets to 9bb. Jam 40bb, call, or fold.",
+    "game_type": "cash",
+    "table_size": 6,
+    "stack_depth": 40,
+    "hero_position": "UTG",
+    "situation": "vs_3Bet",
+    "villain_position": "BB",
+    "sizings": {
+      "open_bb": 2.5,
+      "3bet_bb": 9.0,
+      "4bet_bb": 40.0
+    },
+    "source": {
+      "type": "authored",
+      "detail": "Hand-authored from standard 40bb 6-max principles. NOT solver output - reasonable reference ranges, not an equilibrium. Replace with solver exports when available.",
+      "date": "2026-10-20",
+      "spec": {
+        "RAISE": "QQ+, AKs, AKo",
+        "DEFEND": "QQ+, AKs, AKo, JJ, TT, AQs"
+      }
+    },
+    "explanations": {
+      "RAISE": "At 40bb the 4-bet is the stack. There is no 4-bet-and-fold, so the raising range is exactly the hands happy to get it all in against a Big Blind 3-bet.",
+      "CALL": "Hands too strong to fold but not quite wanting 40bb in against UTG's own tight range. We see a flop with roughly 3.5 SPR.",
+      "FOLD": "Everything else in an already tight opening range. Facing a 3-bet with 40bb there is no room to continue speculatively."
+    }
+  },
+  "actions": {
+    "RAISE": [
+      "AA", "KK", "QQ",
+      "AKs",
+      "AKo"
+    ],
+    "CALL": [
+      "JJ", "TT",
+      "AQs"
+    ],
+    "FOLD": [
+      "99", "88", "77", "66", "55", "44", "33", "22",
+      "AJs", "ATs", "A9s", "A8s", "A7s", "A6s", "A5s", "A4s", "A3s", "A2s",
+      "KQs", "KJs", "KTs", "K9s", "K8s", "K7s", "K6s", "K5s", "K4s", "K3s", "K2s",
+      "QJs", "QTs", "Q9s", "Q8s", "Q7s", "Q6s", "Q5s", "Q4s", "Q3s", "Q2s",
+      "JTs", "J9s", "J8s", "J7s", "J6s", "J5s", "J4s", "J3s", "J2s",
+      "T9s", "T8s", "T7s", "T6s", "T5s", "T4s", "T3s", "T2s",
+      "98s", "97s", "96s", "95s", "94s", "93s", "92s",
+      "87s", "86s", "85s", "84s", "83s", "82s",
+      "76s", "75s", "74s", "73s", "72s",
+      "65s", "64s", "63s", "62s",
+      "54s", "53s", "52s",
+      "43s", "42s",
+      "32s",
+      "AQo", "AJo", "ATo", "A9o", "A8o", "A7o", "A6o", "A5o", "A4o", "A3o", "A2o",
+      "KQo", "KJo", "KTo", "K9o", "K8o", "K7o", "K6o", "K5o", "K4o", "K3o", "K2o",
+      "QJo", "QTo", "Q9o", "Q8o", "Q7o", "Q6o", "Q5o", "Q4o", "Q3o", "Q2o",
+      "JTo", "J9o", "J8o", "J7o", "J6o", "J5o", "J4o", "J3o", "J2o",
+      "T9o", "T8o", "T7o", "T6o", "T5o", "T4o", "T3o", "T2o",
+      "98o", "97o", "96o", "95o", "94o", "93o", "92o",
+      "87o", "86o", "85o", "84o", "83o", "82o",
+      "76o", "75o", "74o", "73o", "72o",
+      "65o", "64o", "63o", "62o",
+      "54o", "53o", "52o",
+      "43o", "42o",
+      "32o"
+    ]
+  },
+  "mixes": {
+    "QQ": ["RAISE", "CALL"],
+    "JJ": ["CALL", "RAISE"],
+    "TT": ["CALL", "FOLD"],
+    "99": ["FOLD", "CALL"],
+    "AKs": ["RAISE", "CALL"],
+    "AJs": ["FOLD", "CALL"],
+    "AKo": ["RAISE", "FOLD"],
+    "AQo": ["FOLD", "RAISE"]
+  }
+}

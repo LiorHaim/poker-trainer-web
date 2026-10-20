@@ -588,6 +588,7 @@
 
                 <div class="flex flex-col gap-3">
                     <div class="flex flex-col sm:flex-row gap-3">
+                        <select id="focus-stack" class="bg-black/30 text-white rounded-xl p-3 flex-1 border border-white/10 font-semibold focus:ring-2 focus:ring-emerald-500/50 focus:border-emerald-500/50 outline-none transition cursor-pointer appearance-none" aria-label="Select Stack Depth"><option value="">Any Stack</option></select>
                         <select id="focus-pos" class="bg-black/30 text-white rounded-xl p-3 flex-1 border border-white/10 font-semibold focus:ring-2 focus:ring-emerald-500/50 focus:border-emerald-500/50 outline-none transition cursor-pointer appearance-none" aria-label="Select Focus Position"><option value="">Any Position</option><option value="BTN">Button</option><option value="BB">Big Blind</option><option value="SB">Small Blind</option><option value="CO">Cutoff</option><option value="MP">Middle Pos</option><option value="UTG">UTG</option></select>
                         <select id="focus-situation" class="bg-black/30 text-white rounded-xl p-3 flex-1 border border-white/10 font-semibold focus:ring-2 focus:ring-emerald-500/50 focus:border-emerald-500/50 outline-none transition cursor-pointer appearance-none" aria-label="Select Situation Type"><option value="">Any Situation</option><option value="RFI">RFI (Open Raise)</option><option value="vs_RFI">vs RFI (Facing Open)</option><option value="vs_3Bet">vs 3-Bet</option><option value="vs_4Bet">vs 4-Bet</option><option value="vs_5Bet">vs 5-Bet</option><option value="squeeze">Squeeze</option></select>
                     </div>
@@ -935,6 +936,7 @@
                 }
             });
             fetchMusicList();
+            loadTrainingOptions();
             const bgMusic = document.getElementById('bg-music');
             bgMusic.volume = musicVolume;
             bgMusic.addEventListener('ended', playNextTrack);
@@ -1043,6 +1045,7 @@
             document.getElementById('streak-display').classList.add('hidden');
             let settings = {
                 training_mode: mode,
+                stack_depth: document.getElementById('focus-stack').value || null,
                 focus_position: document.getElementById('focus-pos').value,
                 focus_situation: document.getElementById('focus-situation').value
             };
@@ -1451,6 +1454,14 @@
                 if (e.code == 'Space' && !document.getElementById('feedback').classList.contains('hidden')) { e.preventDefault(); nextHand(); }
             }
         });
+
+        async function loadTrainingOptions() {
+            const options = await apiCall('options');
+            if (!options) return;
+            const select = document.getElementById('focus-stack');
+            select.innerHTML = '<option value="">Any Stack</option>' +
+                options.stack_depths.map(d => `<option value="${d}">${d}BB</option>`).join('');
+        }
 
         async function fetchMusicList() {
             try {

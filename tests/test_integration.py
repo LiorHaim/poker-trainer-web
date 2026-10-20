@@ -309,3 +309,47 @@ def test_the_matrix_marks_close_hands(client):
     for hand in mixed:
         assert len(chart[hand]["mix"]) == 2
         assert chart[hand]["mix"][0] == chart[hand]["action"]
+
+
+# --- Stack depth -------------------------------------------------------------
+
+def test_options_reports_what_the_chart_set_covers(client):
+    options = client.get("/api/options").get_json()
+    assert sorted(options["stack_depths"]) == [40, 100]
+    assert "RFI" in options["situations"]
+
+
+@pytest.mark.parametrize("depth", [40, 100])
+def test_training_can_be_filtered_to_one_stack_depth(client, depth):
+    """Stack depth was hardcoded to 100, so the 40bb charts were unreachable."""
+    scenario = client.post("/api/start", json={"stack_depth": depth}).get_json()
+    assert scenario["stack"] == depth
+    token = scenario["token"]
+    for _ in range(30):
+        scenario = client.post("/api/next", json={"token": token}).get_json()
+        assert scenario["stack"] == depth, "the depth filter leaked across the session"
+        token = scenario["token"]
+
+
+def test_any_stack_mixes_both_depths(client):
+    token = client.post("/api/start", json={}).get_json()["token"]
+    seen = set()
+    for _ in range(60):
+        scenario = client.post("/api/next", json={"token": token}).get_json()
+        seen.add(scenario["stack"])
+        token = scenario["token"]
+    assert seen == {40, 100}, f"expected both depths, saw {seen}"
+
+
+def test_an_unavailable_stack_depth_is_rejected(client):
+    assert client.post("/api/start", json={"stack_depth": 200}).status_code == 400
+    assert client.post("/api/start", json={"stack_depth": "deep"}).status_code == 400
+
+
+def test_no_five_bet_node_exists_at_forty_big_blinds(client):
+    """A 4-bet at 40bb is committing, so there is no decision after it."""
+    from logic.chart_schema import load_charts
+    charts, _ = load_charts(CHART_DIR)
+    shallow = [k for k, d in charts.items()
+               if d["metadata"]["stack_depth"] == 40 and d["metadata"]["situation"] == "vs_5Bet"]
+    assert not shallow, f"40bb should have no 5-bet nodes, found {shallow}"

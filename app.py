@@ -299,6 +299,18 @@ def get_music_list():
         logger.error(f"Error listing music files: {e}", exc_info=True)
         return jsonify([])
 
+@app.route('/api/options', methods=['GET'])
+def training_options():
+    """What the chart set actually supports, for the setup screen to render."""
+    situations = sorted({m.get("situation") for m in strategy_mgr.chart_metadata.values()}) \
+        if strategy_mgr else []
+    return jsonify({
+        "stack_depths": sorted(available_stack_depths()),
+        "situations": situations,
+        "positions": list(POSITIONS),
+    })
+
+
 @app.route('/api/charts', methods=['GET'])
 def list_charts():
     charts = []
@@ -451,6 +463,13 @@ def get_leaderboard():
 
 # --- Game Routes (per-user state, no shared mutable singleton) ---
 
+def available_stack_depths():
+    """Stack depths the loaded charts actually cover, so the UI cannot offer a dead option."""
+    if not strategy_mgr:
+        return {100}
+    return {int(m["stack_depth"]) for m in strategy_mgr.chart_metadata.values() if "stack_depth" in m}
+
+
 def _normalised_settings(raw):
     """
     Validate and normalise training settings at the trust boundary.
@@ -492,8 +511,22 @@ def _normalised_settings(raw):
         raise InvalidSettings(f"focus_situation must be one of {', '.join(SITUATIONS)}")
     settings["focus_situation"] = situation
 
-    # Only one stack depth exists in the chart set; not client-controlled.
-    settings["stack_depths"] = [100]
+    depth = settings.get("stack_depth")
+    available = available_stack_depths()
+    if depth in (None, "", "any"):
+        settings["stack_depths"] = sorted(available)
+        settings["stack_depth"] = None
+    else:
+        try:
+            depth = int(depth)
+        except (TypeError, ValueError) as e:
+            raise InvalidSettings("stack_depth must be a whole number") from e
+        if depth not in available:
+            raise InvalidSettings(
+                f"stack_depth must be one of {', '.join(str(d) for d in sorted(available))}"
+            )
+        settings["stack_depth"] = depth
+        settings["stack_depths"] = [depth]
     return settings
 
 

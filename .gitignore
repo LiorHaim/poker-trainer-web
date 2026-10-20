@@ -17,3 +17,6 @@ shots/
 
 # Exported training history - personal data, keep it local
 backups/
+
+# Tailwind build input; the committed output is static/app.css
+node_modules/

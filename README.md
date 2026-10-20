@@ -90,7 +90,7 @@ is rejected with 409.
 
 - **Backend:** Python, Flask, Gunicorn
 - **Database:** MongoDB (via PyMongo)
-- **Frontend:** Vanilla HTML/CSS/JS (single-page app)
+- **Frontend:** Vanilla HTML/CSS/JS (single-page app), Tailwind compiled ahead of time
 - **Deployment:** Docker, OpenShift
 
 ## Quick Start
@@ -152,6 +152,7 @@ docker run -p 8080:8080 -e MONGO_URI="mongodb://host.docker.internal:27017/poker
 | `make lint` | Run ruff |
 | `make validate-charts` | Validate every strategy chart against the schema |
 | `make derive-mixes` | Recompute which hands are close decisions (run after editing ranges) |
+| `make css` | Rebuild `static/app.css` after adding a Tailwind class (needs node) |
 | `make dev-install` | Install dev dependencies (pytest, ruff) |
 | `make deploy` | Build and deploy to OpenShift (generates `SECRET_KEY` on first run) |
 | `make ensure-secret` | Create the `SECRET_KEY` secret if it does not exist |

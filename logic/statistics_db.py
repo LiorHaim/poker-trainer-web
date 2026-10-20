@@ -7,6 +7,22 @@ from .review import ReviewItem, due_items
 
 logger = logging.getLogger(__name__)
 
+
+class StatsUnavailable(RuntimeError):
+    """
+    The statistics store could not answer.
+
+    Raised instead of returning a neutral default, because the defaults were
+    not neutral: with the database down, `get_bankroll` returned exactly the
+    starting bankroll, `verify_user` returned False ("Invalid credentials") for
+    a correct password, and `create_user` returned False ("Username already
+    taken") for a name nobody holds. Those are confident false answers, which
+    are worse than an error - a user told their password is wrong will go and
+    reset a password that was fine.
+
+    Writes are deliberately exempt: see `log_decision`.
+    """
+
 # --- Scoring ---
 # These were duplicated in app.py and again inside the leaderboard aggregation,
 # so changing one left the HUD and the leaderboard disagreeing.
@@ -19,10 +35,16 @@ def bankroll_from(correct: int, total: int) -> int:
     """The one definition of what a bankroll is."""
     return STARTING_BANKROLL + correct * CORRECT_REWARD - (total - correct) * INCORRECT_PENALTY
 
+#: How long an operation waits for a reachable server before failing. Bounds
+#: both user-facing request latency and the readiness probe. Overridable so
+#: tests can fail fast instead of waiting out a real timeout.
+DEFAULT_SERVER_SELECTION_TIMEOUT_MS = 2000
+
+
 class StatisticsManagerDB:
-    def __init__(self, mongo_uri):
+    def __init__(self, mongo_uri, server_selection_timeout_ms=DEFAULT_SERVER_SELECTION_TIMEOUT_MS):
         try:
-            self.client = MongoClient(mongo_uri, serverSelectionTimeoutMS=5000)
+            self.client = MongoClient(mongo_uri, serverSelectionTimeoutMS=server_selection_timeout_ms)
             self.db = self.client.get_database()
             self.history = self.db.history
             self.users = self.db.users
@@ -56,11 +78,28 @@ class StatisticsManagerDB:
         except Exception as e:
             logger.warning(f"Error creating indexes (may already exist): {e}")
 
+    def ping(self):
+        """
+        True if the database actually answers.
+
+        The old health check tested `stats_mgr is not None`, which is an object
+        reference. MongoClient connects lazily and index creation swallows its
+        own errors, so the manager constructs successfully against a database
+        that does not exist - the probe could never report a problem.
+        """
+        try:
+            self.client.admin.command("ping")
+            return True
+        except Exception as e:
+            logger.warning("Database ping failed: %s", e)
+            return False
+
     # --- USER AUTHENTICATION ---
     def create_user(self, username, password):
+        """Returns False only when the name is genuinely taken; raises if unknown."""
         try:
             if self.users.find_one({"username": username}):
-                return False # User exists
+                return False  # User exists
 
             self.users.insert_one({
                 "username": username,
@@ -70,9 +109,10 @@ class StatisticsManagerDB:
             return True
         except Exception as e:
             logger.error(f"Error creating user: {e}", exc_info=True)
-            return False
+            raise StatsUnavailable("cannot reach the account store") from e
 
     def verify_user(self, username, password):
+        """Returns False only for genuinely wrong credentials; raises if unknown."""
         try:
             user = self.users.find_one({"username": username})
             if not user:
@@ -80,7 +120,7 @@ class StatisticsManagerDB:
             return check_password_hash(user["password"], password)
         except Exception as e:
             logger.error(f"Error verifying user: {e}", exc_info=True)
-            return False
+            raise StatsUnavailable("cannot reach the account store") from e
 
     # --- HISTORY (Scoped to User) ---
     def log_decision(self, result, username):
@@ -103,8 +143,11 @@ class StatisticsManagerDB:
             )
             self._reschedule(result, username)
         except Exception as e:
+            # Deliberate exception to the raise-on-failure policy above: losing
+            # one hand from the history is better than breaking the drill the
+            # user is in the middle of. Reads do not get this treatment,
+            # because a missing write is invisible while a wrong read is a lie.
             logger.error(f"Error logging decision: {e}", exc_info=True)
-            # Don't raise - we don't want to break the game flow if logging fails
 
     # --- Spaced repetition ---
     def _reschedule(self, result, username):
@@ -148,7 +191,14 @@ class StatisticsManagerDB:
         return totals.get("total", 0)
 
     def get_due_reviews(self, username, limit=50):
-        """Spots scheduled to come back, most overdue first."""
+        """
+        Spots scheduled to come back, most overdue first.
+
+        Degrades rather than raising: with the store unreachable, adaptive
+        drilling falls back to random hands, which is a worse drill but still
+        a working one. "Nothing is due" is an honest-enough statement about an
+        unknown; "your bankroll is $10,000" is not.
+        """
         try:
             hands_played = self._hands_played(username)
             cursor = self.reviews.find({"username": username, "due_at": {"$lte": hands_played}})
@@ -187,7 +237,7 @@ class StatisticsManagerDB:
             return bankroll_from(totals.get("correct", 0), totals.get("total", 0))
         except Exception as e:
             logger.error(f"Error calculating bankroll: {e}", exc_info=True)
-            return STARTING_BANKROLL
+            raise StatsUnavailable("cannot read your bankroll") from e
 
     def _backfill_totals(self, username):
         """
@@ -243,7 +293,7 @@ class StatisticsManagerDB:
             return list(self.history.aggregate(pipeline))
         except Exception as e:
             logger.error(f"Error getting leaderboard: {e}", exc_info=True)
-            return []
+            raise StatsUnavailable("cannot read the leaderboard") from e
 
     def get_overall_accuracy(self, username):
         try:
@@ -254,7 +304,7 @@ class StatisticsManagerDB:
             return {"correct": correct, "total": total, "percent": (correct/total)*100}
         except Exception as e:
             logger.error(f"Error getting overall accuracy: {e}", exc_info=True)
-            return {"correct": 0, "total": 0, "percent": 0.0}
+            raise StatsUnavailable("cannot read your statistics") from e
 
     def get_accuracy_by_position(self, username):
         try:
@@ -269,7 +319,7 @@ class StatisticsManagerDB:
             return self._process_aggregation(pipeline)
         except Exception as e:
             logger.error(f"Error getting accuracy by position: {e}", exc_info=True)
-            return {}
+            raise StatsUnavailable("cannot read your statistics") from e
 
     def get_accuracy_by_chart(self, username, min_hands=5, limit=8):
         """
@@ -294,7 +344,7 @@ class StatisticsManagerDB:
             return dict(worst[:limit])
         except Exception as e:
             logger.error(f"Error getting accuracy by chart: {e}", exc_info=True)
-            return {}
+            raise StatsUnavailable("cannot read your statistics") from e
 
     def get_worst_hands(self, username, min_hands=3, limit=10):
         """Hand classes the user misplays most often, across all nodes."""
@@ -314,7 +364,7 @@ class StatisticsManagerDB:
             return dict(worst[:limit])
         except Exception as e:
             logger.error(f"Error getting worst hands: {e}", exc_info=True)
-            return {}
+            raise StatsUnavailable("cannot read your statistics") from e
 
     def get_recent_history(self, username, limit=50):
         try:
@@ -326,26 +376,26 @@ class StatisticsManagerDB:
             return results
         except Exception as e:
             logger.error(f"Error getting recent history: {e}", exc_info=True)
-            return []
+            raise StatsUnavailable("cannot read your statistics") from e
 
     def _process_aggregation(self, pipeline):
-        try:
-            results = {}
-            cursor = self.history.aggregate(pipeline)
-            for doc in cursor:
-                key = str(doc["_id"])
-                total = doc["total"]
-                correct = doc["correct"]
-                percent = (correct / total) * 100 if total > 0 else 0.0
-                results[key] = {
-                    "correct": correct,
-                    "total": total,
-                    "percent": percent
-                }
-            return results
-        except Exception as e:
-            logger.error(f"Error processing aggregation: {e}", exc_info=True)
-            return {}
+        """
+        Deliberately does not catch: it used to return {} on failure, which
+        swallowed the error before the calling method could turn it into a
+        StatsUnavailable, so "0 hands, 0%" was reported as fact during an
+        outage.
+        """
+        results = {}
+        for doc in self.history.aggregate(pipeline):
+            key = str(doc["_id"])
+            total = doc["total"]
+            correct = doc["correct"]
+            results[key] = {
+                "correct": correct,
+                "total": total,
+                "percent": (correct / total) * 100 if total > 0 else 0.0,
+            }
+        return results
 
     def clear_stats(self, username):
         try:

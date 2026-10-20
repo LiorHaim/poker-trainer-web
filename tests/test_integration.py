@@ -221,3 +221,32 @@ def test_game_routes_require_a_session():
         assert anonymous.post("/api/start", json={}).status_code == 401
         assert anonymous.post("/api/act", json={"action": "FOLD"}).status_code == 401
         assert anonymous.post("/api/next", json={}).status_code == 401
+
+
+# --- Settings validation at the trust boundary ------------------------------
+
+@pytest.mark.parametrize("bad", [
+    {"table_size": "abc"},
+    {"table_size": 99},
+    {"game_type": "Omaha"},
+    {"training_mode": "Cheat"},
+    {"focus_position": "LOJ"},
+    {"focus_situation": "vs_9Bet"},
+])
+def test_bad_settings_are_rejected_before_being_signed(client, bad):
+    """
+    Settings ride inside the training token and are replayed on every
+    /api/next, so an unchecked value poisons the session rather than failing
+    once. `table_size: "abc"` used to surface as a 500.
+    """
+    response = client.post("/api/start", json=bad)
+    assert response.status_code == 400, response.get_json()
+    assert "token" not in response.get_json()
+
+
+def test_valid_settings_still_work(client):
+    response = client.post(
+        "/api/start", json={"training_mode": "Focus", "focus_position": "BTN"}
+    )
+    assert response.status_code == 200
+    assert response.get_json()["hero_pos"] == "BTN"

@@ -3,7 +3,11 @@
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 addopts = "-q --strict-markers"
-filterwarnings = ["error::DeprecationWarning:logic.*"]
+filterwarnings = [
+    "error::DeprecationWarning:logic.*",
+    # mongomock calls datetime.utcnow() internally; not ours to fix.
+    "ignore:datetime.datetime.utcnow:DeprecationWarning:mongomock.*",
+]
 
 [tool.ruff]
 line-length = 120

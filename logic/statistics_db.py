@@ -1,6 +1,8 @@
 import logging
+from datetime import datetime, timezone
 
 from pymongo import MongoClient
+from pymongo.errors import DuplicateKeyError
 from werkzeug.security import check_password_hash, generate_password_hash
 
 from .review import ReviewItem, due_items
@@ -26,6 +28,10 @@ class StatsUnavailable(RuntimeError):
 # --- Scoring ---
 # These were duplicated in app.py and again inside the leaderboard aggregation,
 # so changing one left the HUD and the leaderboard disagreeing.
+#: How long an answered-hand marker is kept. Matches the training token's
+#: lifetime - past that the token is rejected anyway.
+ANSWER_NONCE_TTL_SECONDS = 12 * 60 * 60
+
 STARTING_BANKROLL = 10000
 CORRECT_REWARD = 100
 INCORRECT_PENALTY = 100
@@ -53,6 +59,9 @@ class StatisticsManagerDB:
             self.totals = self.db.totals
             #: Spaced-repetition schedule, one document per (user, chart, hand).
             self.reviews = self.db.reviews
+            #: Nonces of hands already answered, so one deal cannot be
+            #: answered twice. Expires itself; see _create_indexes.
+            self.answered = self.db.answered
 
             # Create indexes for better query performance
             self._create_indexes()
@@ -74,9 +83,33 @@ class StatisticsManagerDB:
             self.totals.create_index("username", unique=True)
             self.reviews.create_index([("username", 1), ("chart", 1), ("hand", 1)], unique=True)
             self.reviews.create_index([("username", 1), ("due_at", 1)])
+            self.answered.create_index("nonce", unique=True)
+            # Entries are only useful while the token that carries them is
+            # valid, so Mongo expires them rather than the collection growing
+            # without bound.
+            self.answered.create_index("created_at", expireAfterSeconds=ANSWER_NONCE_TTL_SECONDS)
             logger.info("Database indexes created successfully")
         except Exception as e:
             logger.warning(f"Error creating indexes (may already exist): {e}")
+
+    def claim_answer(self, nonce):
+        """
+        Record that this dealt hand has been answered. False if it already was.
+
+        Fails open: if the store cannot be reached the answer is allowed
+        through, because blocking the drill during an outage is worse than
+        letting a duplicate past. Same policy as `log_decision`.
+        """
+        if not nonce:
+            return True  # tokens issued before this existed
+        try:
+            self.answered.insert_one({"nonce": nonce, "created_at": datetime.now(timezone.utc)})
+            return True
+        except DuplicateKeyError:
+            return False
+        except Exception as e:
+            logger.error(f"Could not claim answer nonce: {e}", exc_info=True)
+            return True
 
     def ping(self):
         """

@@ -1074,6 +1074,9 @@
 
             renderCard('card1', sc.card1); renderCard('card2', sc.card2);
             document.getElementById('controls').classList.remove('hidden');
+            document.querySelectorAll('.btn-action').forEach(b => {
+                b.disabled = false; b.classList.remove('opacity-50');
+            });
             document.getElementById('feedback').classList.add('hidden');
             // Keep the grid in place and just mask the range, so answering a
             // hand does not move anything on screen.
@@ -1229,6 +1232,11 @@
             document.getElementById('fb-text').textContent = text;
 
             lastChart = result.chart;
+            // Deliberately NOT re-enabling the action buttons here. They used
+            // to come back as soon as the result rendered, so clicking again
+            // answered the same hand a second time - the server logged another
+            // decision and the bankroll moved. They stay disabled until the
+            // next hand is dealt; the server rejects a repeat answer anyway.
             renderMatrix(result.chart, result.hero_hand, 'matrix');
             document.getElementById('matrix').classList.remove('is-masked');
             document.getElementById('matrix-state').textContent = result.is_close_decision
@@ -1242,7 +1250,6 @@
                 fb.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
             }
             document.getElementById('next-btn').focus({ preventScroll: true });
-            btns.forEach(b => { b.disabled = false; b.classList.remove('opacity-50'); });
         }
 
         const ACTION_COLOURS = { RAISE: '#2563eb', CALL: '#d97706', FOLD: '#334155' };

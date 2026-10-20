@@ -147,6 +147,21 @@ diff:
 Do not reformat a chart with `json.dump`; it flattens these groups and turns a
 one-line change into a 200-line diff.
 
+## Stack depth
+
+`metadata.stack_depth` is a real dimension, not a constant. The chart set holds
+100bb and 40bb, and every cross-chart rule keys on it: two charts for the same
+seat at different depths are different nodes, and a 40bb opening range is not
+the range hero holds at a 100bb node.
+
+Shallower is not simply tighter. At 40bb the `vs_5Bet` node does not exist at
+all — a 4-bet is committing, so there is no decision after it — and the
+`vs_3Bet` nodes become jam-or-fold. Ranges tighten at the bottom, where the
+implied-odds hands live, rather than uniformly.
+
+`/api/options` reports the depths actually present, so the setup screen cannot
+offer one the chart set does not cover.
+
 ## `mixes` — hands the chart plays two ways
 
 Optional, and generated rather than hand-written:

@@ -6,7 +6,7 @@ Built with Flask, MongoDB, and a lo-fi themed frontend.
 
 ## Features
 
-- **45 Strategy Charts** — covers all key 6-Max 100BB spots: RFI, vs RFI (including 3-betting), vs 3-Bet, vs 4-Bet, vs 5-Bet, and Squeeze
+- **65 Strategy Charts** — covers all key 6-Max 100BB spots: RFI, vs RFI (including 3-betting), vs 3-Bet, vs 4-Bet, vs 5-Bet, and Squeeze
 - **Drill Mode** — continuous hands across all loaded charts, dealt only from ranges that can actually reach each spot
 - **Adaptive Review** — spots you get wrong come back on a spaced-repetition schedule and stop appearing once you have them down
 - **Focus Mode** — practice a specific position or situation (e.g. "only BTN spots")
@@ -20,7 +20,10 @@ Built with Flask, MongoDB, and a lo-fi themed frontend.
 
 ## Strategy Charts Included
 
-All charts are for **Cash Game, 6-Max, 100BB effective stacks**:
+Two stack depths, selectable on the setup screen. **100BB** is the full tree;
+**40BB** is a different game — the 5-bet node disappears because a 4-bet is
+committing, 3-bets get more linear, and ranges tighten at the bottom where
+implied-odds hands live.
 
 | Spot | Charts |
 |------|--------|
@@ -62,7 +65,8 @@ it. Progress:
 | 4 | Stateless scenario tokens, rollup stats, container hardening | done |
 | 5 | Zero-scroll drill loop, hero-at-bottom table, colour-blind-safe palette | done |
 | 6 | Spaced repetition and leak reporting | done |
-| 7 | Breadth: more stack depths, vs-squeeze, limps, 9-max, MTT | planned |
+| 7 | 40bb short-stack charts and a selectable stack depth | done |
+| 8 | More breadth: vs-squeeze, limps, 9-max, MTT | planned |
 
 Range frequencies are asserted against reference bands in
 `tests/test_chart_invariants.py`, so a chart cannot drift back out of range
@@ -174,6 +178,7 @@ docker run -p 8080:8080 -e MONGO_URI="mongodb://host.docker.internal:27017/poker
 | `GET` | `/api/statistics` | Get user stats |
 | `POST` | `/api/statistics/clear` | Reset user stats |
 | `GET` | `/api/leaderboard` | Get the leaderboard |
+| `GET` | `/api/options` | Stack depths, situations and positions the chart set covers |
 | `GET` | `/api/charts` | List all strategy charts |
 | `GET` | `/api/chart/<key>` | Get a specific chart's data |
 | `GET` | `/api/music` | List available background tracks |

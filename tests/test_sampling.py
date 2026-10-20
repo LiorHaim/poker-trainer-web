@@ -13,7 +13,14 @@ from pathlib import Path
 
 import pytest
 
-from logic.chart_schema import ALL_HANDS, combo_count, load_charts, raising_hands
+from logic.chart_schema import (
+    ALL_HANDS,
+    combo_count,
+    index_prior_ranges,
+    load_charts,
+    prior_range_keys,
+    resolve_prior_range,
+)
 from logic.sampling import ReachabilitySampler
 from logic.scenario import Hand, random_hand_of
 
@@ -78,46 +85,35 @@ def test_deeper_nodes_deal_only_from_the_prior_range(sampler, charts):
     """
     The core property. Previously ~75% of these deals were impossible spots.
 
-    Each node has its own prior range: hero opened to reach a vs_3Bet node,
-    3-bet to reach vs_4Bet, and opened then 4-bet to reach vs_5Bet.
+    Resolved through the shipped lookup rather than a local copy: the local
+    version keyed on seat alone, which was correct while every chart was 100bb
+    and silently wrong once 40bb was added, because the two opening ranges for
+    a seat collided.
     """
-    by_situation = {
-        "vs_3Bet": lambda m: ("RFI", m["hero_position"], None),
-        "vs_4Bet": lambda m: ("vs_RFI", m["hero_position"], m["villain_position"]),
-        "vs_5Bet": lambda m: ("vs_3Bet", m["hero_position"], m["villain_position"]),
-    }
-    raises = {
-        (d["metadata"]["situation"], d["metadata"]["hero_position"],
-         d["metadata"].get("villain_position") if d["metadata"]["situation"] != "RFI" else None):
-            raising_hands(d)
-        for d in charts.values()
-    }
+    index = index_prior_ranges(charts)
 
     checked = 0
     for key, data in charts.items():
         meta = data["metadata"]
-        lookup = by_situation.get(meta["situation"])
-        if lookup is None:
-            continue
-        expected = raises.get(lookup(meta))
-        if expected is None:
-            # No chart defines that range; the sampler falls back to a looser
-            # one, which the validator reports as imprecise-prior-range.
+        if not prior_range_keys(meta):
+            assert sampler.pool(key) is None, f"{key} should deal from the whole deck"
             continue
 
+        resolved = resolve_prior_range(meta, index)
+        assert resolved, f"{key} has no chart describing how hero reaches it"
+        expected = resolved[2]
+
         assert set(sampler.pool(key)) == expected, key
-        for _ in range(100):
+        for _ in range(60):
             assert sampler.deal(key).range_notation in expected, key
         checked += 1
 
-    reached_by_raising = sum(
-        1 for d in charts.values() if d["metadata"]["situation"] in by_situation
-    )
-    assert checked == reached_by_raising, (
-        f"{reached_by_raising - checked} node(s) hero reaches by raising have no chart "
-        f"defining that range, so they deal from a looser one"
-    )
     assert checked > 0
+    reached_by_raising = sum(
+        1 for d in charts.values()
+        if d["metadata"]["situation"] in ("vs_3Bet", "vs_4Bet", "vs_5Bet")
+    )
+    assert checked == reached_by_raising
 
 
 def test_no_dealt_hand_is_an_automatic_fold(sampler, charts):

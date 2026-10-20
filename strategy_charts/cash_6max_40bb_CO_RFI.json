@@ -1,0 +1,92 @@
+{
+  "metadata": {
+    "chart_id": "cash_6max_40bb_CO_RFI",
+    "description": "6-Max Cash, 40bb. Folded to Hero in CO. Open to 2.5bb or fold.",
+    "game_type": "cash",
+    "table_size": 6,
+    "stack_depth": 40,
+    "hero_position": "CO",
+    "situation": "RFI",
+    "sizings": {
+      "open_bb": 2.5
+    },
+    "source": {
+      "type": "authored",
+      "detail": "Hand-authored from standard 40bb 6-max principles. NOT solver output - reasonable reference ranges, not an equilibrium. Replace with solver exports when available.",
+      "date": "2026-10-20",
+      "spec": {
+        "RAISE": "22+, A2s+, K8s+, Q9s+, J9s+, T8s+, 97s+, 87s, 76s, A9o+, KTo+, QTo+, JTo"
+      }
+    },
+    "explanations": {
+      "RAISE": "Three players left, two of them blinds, so stealing starts to pay. Every suited ace opens for the blocker and nut-flush value, which matter just as much short as deep.",
+      "FOLD": "Two players still have position. Weak offsuit hands play badly heads-up out of position and cannot make up for it with postflop maneuvering at this depth."
+    }
+  },
+  "actions": {
+    "RAISE": [
+      "AA", "KK", "QQ", "JJ", "TT", "99", "88", "77", "66", "55", "44", "33", "22",
+      "AKs", "AQs", "AJs", "ATs", "A9s", "A8s", "A7s", "A6s", "A5s", "A4s", "A3s", "A2s",
+      "KQs", "KJs", "KTs", "K9s", "K8s",
+      "QJs", "QTs", "Q9s",
+      "JTs", "J9s",
+      "T9s", "T8s",
+      "98s", "97s",
+      "87s",
+      "76s",
+      "AKo", "AQo", "AJo", "ATo", "A9o",
+      "KQo", "KJo", "KTo",
+      "QJo", "QTo",
+      "JTo"
+    ],
+    "FOLD": [
+      "K7s", "K6s", "K5s", "K4s", "K3s", "K2s",
+      "Q8s", "Q7s", "Q6s", "Q5s", "Q4s", "Q3s", "Q2s",
+      "J8s", "J7s", "J6s", "J5s", "J4s", "J3s", "J2s",
+      "T7s", "T6s", "T5s", "T4s", "T3s", "T2s",
+      "96s", "95s", "94s", "93s", "92s",
+      "86s", "85s", "84s", "83s", "82s",
+      "75s", "74s", "73s", "72s",
+      "65s", "64s", "63s", "62s",
+      "54s", "53s", "52s",
+      "43s", "42s",
+      "32s",
+      "A8o", "A7o", "A6o", "A5o", "A4o", "A3o", "A2o",
+      "K9o", "K8o", "K7o", "K6o", "K5o", "K4o", "K3o", "K2o",
+      "Q9o", "Q8o", "Q7o", "Q6o", "Q5o", "Q4o", "Q3o", "Q2o",
+      "J9o", "J8o", "J7o", "J6o", "J5o", "J4o", "J3o", "J2o",
+      "T9o", "T8o", "T7o", "T6o", "T5o", "T4o", "T3o", "T2o",
+      "98o", "97o", "96o", "95o", "94o", "93o", "92o",
+      "87o", "86o", "85o", "84o", "83o", "82o",
+      "76o", "75o", "74o", "73o", "72o",
+      "65o", "64o", "63o", "62o",
+      "54o", "53o", "52o",
+      "43o", "42o",
+      "32o"
+    ]
+  },
+  "mixes": {
+    "K8s": ["RAISE", "FOLD"],
+    "K7s": ["FOLD", "RAISE"],
+    "Q9s": ["RAISE", "FOLD"],
+    "Q8s": ["FOLD", "RAISE"],
+    "J9s": ["RAISE", "FOLD"],
+    "J8s": ["FOLD", "RAISE"],
+    "T8s": ["RAISE", "FOLD"],
+    "T7s": ["FOLD", "RAISE"],
+    "97s": ["RAISE", "FOLD"],
+    "96s": ["FOLD", "RAISE"],
+    "87s": ["RAISE", "FOLD"],
+    "86s": ["FOLD", "RAISE"],
+    "76s": ["RAISE", "FOLD"],
+    "75s": ["FOLD", "RAISE"],
+    "A9o": ["RAISE", "FOLD"],
+    "A8o": ["FOLD", "RAISE"],
+    "KTo": ["RAISE", "FOLD"],
+    "K9o": ["FOLD", "RAISE"],
+    "QTo": ["RAISE", "FOLD"],
+    "Q9o": ["FOLD", "RAISE"],
+    "JTo": ["RAISE", "FOLD"],
+    "J9o": ["FOLD", "RAISE"]
+  }
+}

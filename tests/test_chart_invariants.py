@@ -28,9 +28,12 @@ from logic.chart_schema import (
     combo_frequency,
     continuing_hands,
     decision_node_id,
+    index_prior_ranges,
     load_baseline,
     load_charts,
+    prior_range_keys,
     raising_hands,
+    resolve_prior_range,
     validate_chart,
 )
 
@@ -127,58 +130,75 @@ def test_chart_ids_are_unique(charts):
 
 # --- Strategic: opening ranges ----------------------------------------------
 
-#: (position, min%, max%) of the deck opened when folded to, combo-weighted.
+#: (stack depth, position, min%, max%) of the deck opened when folded to,
+#: combo-weighted. Shallower stacks open tighter: the hands at the bottom of an
+#: opening range are implied-odds hands, and 40bb does not pay them off.
 RFI_BANDS = [
-    ("UTG", 13.0, 19.0),
-    ("MP", 17.0, 24.0),
-    ("CO", 24.0, 31.0),
-    ("BTN", 41.0, 50.0),
-    ("SB", 38.0, 48.0),
+    (100, "UTG", 13.0, 19.0),
+    (100, "MP", 17.0, 24.0),
+    (100, "CO", 24.0, 31.0),
+    (100, "BTN", 41.0, 50.0),
+    (100, "SB", 38.0, 48.0),
+    (40, "UTG", 12.0, 18.0),
+    (40, "MP", 15.0, 22.0),
+    (40, "CO", 21.0, 28.0),
+    (40, "BTN", 36.0, 45.0),
+    (40, "SB", 33.0, 43.0),
 ]
 
 
-def rfi_chart(charts, position):
+def rfi_chart(charts, position, stack=100):
+    """A chart set can hold several stack depths, so the depth is part of the key."""
     for key, data in charts.items():
         meta = data["metadata"]
-        if meta["situation"] == "RFI" and meta["hero_position"] == position:
+        if (meta["situation"] == "RFI" and meta["hero_position"] == position
+                and meta["stack_depth"] == stack):
             return key, data
-    raise AssertionError(f"no RFI chart for {position}")
+    raise AssertionError(f"no {stack}bb RFI chart for {position}")
 
 
-@pytest.mark.parametrize("position,low,high", RFI_BANDS)
-def test_rfi_frequency_in_band(charts, position, low, high):
-    key, data = rfi_chart(charts, position)
+@pytest.mark.parametrize("stack,position,low,high", RFI_BANDS)
+def test_rfi_frequency_in_band(charts, stack, position, low, high):
+    key, data = rfi_chart(charts, position, stack)
     frequency = pct(raising_hands(data))
     assert low <= frequency <= high, f"{key} opens {frequency:.1f}%, expected {low}-{high}%"
 
 
-def test_rfi_widens_with_position(charts):
+@pytest.mark.parametrize("stack", [100, 40])
+def test_rfi_widens_with_position(charts, stack):
     order = ["UTG", "MP", "CO", "BTN"]
-    frequencies = [pct(raising_hands(rfi_chart(charts, p)[1])) for p in order]
+    frequencies = [pct(raising_hands(rfi_chart(charts, p, stack)[1])) for p in order]
     for earlier, later, a, b in zip(order, order[1:], frequencies, frequencies[1:], strict=False):
         assert a < b, f"{earlier} opens {a:.1f}% but {later} opens only {b:.1f}%"
 
 
 # --- Strategic: blind defense -----------------------------------------------
 
-#: (hero, villain, min defend%) - BB closes the action getting a price, so it
-#: defends far wider against the late positions that open widest.
+#: (stack, hero, villain, min defend%) - BB closes the action getting a price,
+#: so it defends far wider against the late positions that open widest. The
+#: floors drop at 40bb: the bottom of a Big Blind defence is made of
+#: implied-odds hands, which is exactly what a short stack takes away.
 DEFENSE_FLOORS = [
-    ("BB", "BTN", 50.0),
-    ("BB", "CO", 42.0),
-    ("BB", "MP", 36.0),
-    ("BB", "UTG", 32.0),
+    (100, "BB", "BTN", 50.0),
+    (100, "BB", "CO", 42.0),
+    (100, "BB", "MP", 36.0),
+    (100, "BB", "UTG", 32.0),
+    (40, "BB", "BTN", 45.0),
+    (40, "BB", "CO", 34.0),
+    (40, "BB", "MP", 27.0),
+    (40, "BB", "UTG", 22.0),
 ]
 
 
-@pytest.mark.parametrize("hero,villain,floor", DEFENSE_FLOORS)
-def test_blind_defends_wide_enough(charts, hero, villain, floor):
+@pytest.mark.parametrize("stack,hero,villain,floor", DEFENSE_FLOORS)
+def test_blind_defends_wide_enough(charts, stack, hero, villain, floor):
     matches = [
         (key, data)
         for key, data in charts.items()
         if data["metadata"]["situation"] == "vs_RFI"
         and data["metadata"]["hero_position"] == hero
         and data["metadata"].get("villain_position") == villain
+        and data["metadata"]["stack_depth"] == stack
     ]
     assert matches, f"no chart for {hero} facing a {villain} open"
     for key, data in matches:
@@ -197,17 +217,25 @@ def test_each_decision_node_has_exactly_one_chart(charts):
 
 
 def test_continuing_ranges_are_reachable(charts):
-    opened = {
-        data["metadata"]["hero_position"]: raising_hands(data)
-        for data in charts.values()
-        if data["metadata"]["situation"] == "RFI"
-    }
+    """
+    Uses the shipped resolver rather than a local lookup.
+
+    This test previously kept its own copy, keyed on seat alone. That was fine
+    while every chart was 100bb; adding 40bb made the two opening ranges
+    collide, and the narrower short-stack range shadowed the deep one. The
+    production code has always keyed on stack depth too, so the fix is to stop
+    reimplementing it here.
+    """
+    index = index_prior_ranges(charts)
     problems = []
     for key, data in sorted(charts.items()):
         meta = data["metadata"]
-        if meta["situation"] not in ("vs_3Bet", "vs_4Bet"):
+        if not prior_range_keys(meta):
             continue
-        unreachable = continuing_hands(data) - opened.get(meta["hero_position"], set())
+        resolved = resolve_prior_range(meta, index)
+        assert resolved, f"{key} has no chart describing how hero reaches it"
+        _used, prior_key, prior_hands = resolved
+        unreachable = continuing_hands(data) - prior_hands
         if unreachable:
-            problems.append(f"{key} continues with {sorted(unreachable)}, never opened")
+            problems.append(f"{key} continues with {sorted(unreachable)}, not in {prior_key}")
     assert not problems, "\n".join(problems)

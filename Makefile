@@ -4,7 +4,7 @@ APP_NAME := poker-trainer
 PYTHON := venv/bin/python3
 
 # --- Commands ---
-.PHONY: all deploy build clean logs url test lint validate-charts check dev-install derive-mixes local-run db-start db-stop update wait-for-rollout check-tools check-login ensure-secret
+.PHONY: all deploy build clean logs url test lint validate-charts check dev-install derive-mixes css local-run db-start db-stop update wait-for-rollout check-tools check-login ensure-secret
 
 # Default: Deploy everything
 all: deploy
@@ -91,6 +91,12 @@ validate-charts:
 
 # Recompute which hands sit on an action boundary. Run after author_chart.py,
 # which rewrites the actions and would leave a stale block behind.
+# Rebuild static/app.css from the classes used in index.html. Needs node, but
+# only here - the runtime image stays Python-only and serves the committed CSS.
+css:
+	@echo "🎨 Building stylesheet..."
+	@npx -y tailwindcss@3 -c tailwind.config.js -i tailwind-input.css -o static/app.css --minify
+
 derive-mixes:
 	@echo "🎲 Deriving close decisions..."
 	@$(PYTHON) scripts/derive_mixes.py

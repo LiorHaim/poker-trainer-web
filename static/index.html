@@ -8,20 +8,12 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script>
-        tailwind.config = {
-            theme: {
-                extend: {
-                    fontFamily: {
-                        display: ['Bebas Neue', 'sans-serif'],
-                        body: ['Plus Jakarta Sans', 'sans-serif'],
-                        mono: ['JetBrains Mono', 'monospace'],
-                    }
-                }
-            }
-        }
-    </script>
+    <!-- Prebuilt with `make css`. The Tailwind CDN script this replaces is
+         123KB over the wire (407KB unpacked) and recompiles the stylesheet in
+         the browser on every page load; this is 20KB of plain CSS and no
+         runtime work. Regenerate after adding any utility class -
+         tests/test_static_assets.py checks for drift. -->
+    <link rel="stylesheet" href="/app.css">
     <style>
         /* --- Theme --- */
         body { 
@@ -196,7 +188,20 @@
 
         /* The range is on screen the whole time, masked until the hand is
            answered, so it reads as reference rather than a reveal. */
-        .matrix.is-masked .cell { color: transparent; background: #1b2232; opacity: 0.45; }
+        .matrix.is-masked .cell { color: transparent; background: #1b2232; opacity: 0.45; cursor: default; }
+        .cell.selected { outline: 2px solid #e2e8f0; outline-offset: -2px; z-index: 6; }
+        .matrix-detail {
+            min-height: 3.2rem;
+            margin-top: 0.6rem;
+            padding: 0.5rem 0.7rem;
+            border-radius: 0.5rem;
+            background: rgba(0,0,0,0.3);
+            border-left: 2px solid rgba(148,163,184,0.4);
+            font-size: 0.75rem;
+            line-height: 1.5;
+            color: #cbd5e1;
+        }
+        .matrix-detail .hand { font-family: 'JetBrains Mono', monospace; font-weight: 700; color: #fff; }
         .matrix.is-masked .cell.hero { color: #93c5fd; }
         .cell.hero { 
             border: 2px solid #60a5fa; z-index: 10; transform: scale(1.35); 
@@ -678,6 +683,7 @@
                             <span id="matrix-state" class="text-[9px] text-gray-600 uppercase tracking-[0.15em]">hidden until you act</span>
                         </div>
                         <div id="matrix" class="matrix is-masked"></div>
+                        <div id="matrix-detail" class="matrix-detail">Click any hand to see why it plays that way.</div>
                         <div class="flex gap-3 justify-center mt-3 text-[9px] uppercase tracking-[0.15em] text-gray-400">
                             <span class="legend-key"><i class="swatch act-RAISE"></i>Raise</span>
                             <span class="legend-key"><i class="swatch act-CALL"></i>Call</span>
@@ -730,17 +736,17 @@
                     </div>
                     <div class="bg-gray-900/50 backdrop-blur p-4 rounded-xl border border-white/5 flex-1 shadow-lg"><div class="text-[10px] text-gray-400 uppercase font-bold mb-2 tracking-[0.15em]">Description</div><p id="study-desc" class="text-gray-400 text-sm leading-relaxed italic">Select a chart to view details...</p></div>
                 </div>
-                <div class="w-full md:w-2/3 flex justify-center items-start"><div id="study-matrix" class="matrix bg-black/30 p-4 rounded-xl border border-white/5 shadow-2xl" style="max-width: 600px; width: 100%;"></div></div>
+                <div class="w-full md:w-2/3 flex justify-center items-start"><div class="w-full" style="max-width: 600px;"><div id="study-matrix" class="matrix bg-black/30 p-4 rounded-xl border border-white/5 shadow-2xl"></div><div id="study-matrix-detail" class="matrix-detail">Click any hand to see why it plays that way.</div></div></div>
             </div>
         </div>
     </div>
 
-    <audio id="sfx-win" src="/assets/win.wav" preload="auto"></audio>
-    <audio id="sfx-lose" src="/assets/lose.wav" preload="auto"></audio>
-    <audio id="sfx-deal" src="/assets/deal.wav" preload="auto"></audio>
-    <audio id="sfx-chip" src="/assets/chip.wav" preload="auto"></audio>
-    <audio id="sfx-click" src="/assets/click.wav" preload="auto"></audio>
-    <audio id="sfx-streak" src="/assets/streak.wav" preload="auto"></audio>
+    <audio id="sfx-win" src="/assets/win.wav" preload="none"></audio>
+    <audio id="sfx-lose" src="/assets/lose.wav" preload="none"></audio>
+    <audio id="sfx-deal" src="/assets/deal.wav" preload="none"></audio>
+    <audio id="sfx-chip" src="/assets/chip.wav" preload="none"></audio>
+    <audio id="sfx-click" src="/assets/click.wav" preload="none"></audio>
+    <audio id="sfx-streak" src="/assets/streak.wav" preload="none"></audio>
     <audio id="bg-music"></audio>
     <canvas id="confetti-canvas"></canvas>
 
@@ -1257,6 +1263,20 @@
 
         const ACTION_COLOURS = { RAISE: '#2563eb', CALL: '#d97706', FOLD: '#334155' };
 
+        function showHandDetail(containerId, hand, entry) {
+            const panel = document.getElementById(containerId + '-detail');
+            if (!panel) return;
+            const grid = document.getElementById(containerId);
+            if (grid.classList.contains('is-masked')) return;   // nothing to reveal yet
+            grid.querySelectorAll('.cell.selected').forEach(c => c.classList.remove('selected'));
+            [...grid.children].find(c => c.textContent === hand)?.classList.add('selected');
+
+            const verdict = entry.mix
+                ? `${entry.mix.join(' or ').toLowerCase()} - a close decision`
+                : entry.action.toLowerCase();
+            panel.innerHTML = `<span class="hand">${esc(hand)}</span> &mdash; ${esc(verdict)}<br>${esc(entry.explanation || '')}`;
+        }
+
         function renderMatrix(chart, heroHand, containerId) {
             let m = document.getElementById(containerId);
             m.innerHTML = '';
@@ -1280,6 +1300,12 @@
                 const label = document.createElement('span');
                 label.textContent = hand;
                 div.appendChild(label);
+                // Every cell showed a pointer and scaled on hover while doing
+                // nothing. Rather than removing the affordance, make it do the
+                // thing it was promising.
+                if (entry) {
+                    div.addEventListener('click', () => showHandDetail(containerId, hand, entry));
+                }
                 m.appendChild(div);
             }}
         }

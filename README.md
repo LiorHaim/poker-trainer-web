@@ -159,7 +159,8 @@ docker run -p 8080:8080 -e MONGO_URI="mongodb://host.docker.internal:27017/poker
 
 | Method | Endpoint | Description |
 |--------|----------|-------------|
-| `GET` | `/api/health` | Health check |
+| `GET` | `/api/health/live` | Liveness — never touches the database |
+| `GET` | `/api/health/ready` | Readiness — pings the database |
 | `POST` | `/api/auth/register` | Create a new account |
 | `POST` | `/api/auth/login` | Log in |
 | `POST` | `/api/auth/logout` | Log out |

@@ -9,9 +9,10 @@ from collections import defaultdict
 from flask import Flask, jsonify, request, send_from_directory, session
 
 from logic import review, session_token
+from logic.chart_schema import POSITIONS, SITUATIONS
 from logic.nodes import build_scenario
 from logic.scenario import Action, Hand, TrainingResult, random_hand_of
-from logic.statistics_db import StatisticsManagerDB
+from logic.statistics_db import StatisticsManagerDB, StatsUnavailable
 from logic.strategy import StrategyManager
 
 logging.basicConfig(
@@ -84,6 +85,29 @@ def check_rate_limit(key, max_attempts=10, window=60):
 def clear_rate_limit(key):
     """Forget a client's attempts, so a success does not count against them."""
     _rate_limits.pop(key, None)
+
+GAME_TYPES = ("Cash Game", "Tournament")
+TRAINING_MODES = ("Drill", "Focus")
+
+
+class InvalidSettings(ValueError):
+    """Training settings the server will not accept."""
+
+
+@app.errorhandler(InvalidSettings)
+def handle_invalid_settings(error):
+    return jsonify({"error": str(error)}), 400
+
+
+@app.errorhandler(StatsUnavailable)
+def handle_stats_unavailable(error):
+    """
+    The store could not answer. Say so, instead of returning the neutral
+    default that used to stand in for it.
+    """
+    logger.error("Statistics store unavailable: %s", error)
+    return jsonify({"error": f"Service temporarily unavailable - {error}."}), 503
+
 
 # --- Security Headers ---
 @app.after_request
@@ -208,20 +232,54 @@ def send_asset(path):
     return send_from_directory('assets', path)
 
 @app.route('/api/health', methods=['GET'])
-def health_check():
-    health_status = {
-        "status": "healthy",
-        "charts_loaded": len(strategy_mgr.chart_metadata) if strategy_mgr else 0,
-        "db_connected": stats_mgr is not None,
-    }
-    status_code = 200 if strategy_mgr and stats_mgr else 503
-    return jsonify(health_status), status_code
+@app.route('/api/health/live', methods=['GET'])
+def health_live():
+    """
+    Liveness: is this process able to serve at all?
+
+    Deliberately does NOT touch the database. Liveness failures cause a
+    restart, and restarting the app because a downstream dependency is down
+    turns a recoverable outage into a self-inflicted restart storm across every
+    replica. `/api/health` is kept as an alias so an older manifest pointing
+    liveness here keeps the correct behaviour.
+    """
+    if not strategy_mgr or not strategy_mgr.charts:
+        # No charts means this process can never serve a hand; a restart is
+        # the right response.
+        return jsonify({"status": "no-charts", "charts_loaded": 0}), 503
+    return jsonify({"status": "alive", "charts_loaded": len(strategy_mgr.chart_metadata)}), 200
+
+
+@app.route('/api/health/ready', methods=['GET'])
+def health_ready():
+    """
+    Readiness: can this process serve a request right now?
+
+    Actually pings the database. The old check reported
+    `"db_connected": stats_mgr is not None`, which is an object-reference test
+    - and because MongoClient connects lazily and index creation swallows its
+    own errors, the manager constructs fine against a database that does not
+    exist. With Mongo scaled to zero the endpoint still answered
+    200 "healthy", so every replica stayed in the load balancer and users were
+    told their password was wrong.
+    """
+    charts_loaded = len(strategy_mgr.chart_metadata) if strategy_mgr else 0
+    db_ok = bool(stats_mgr and stats_mgr.ping())
+    ready = bool(charts_loaded) and db_ok
+    return jsonify({
+        "status": "ready" if ready else "not-ready",
+        "charts_loaded": charts_loaded,
+        "db_connected": db_ok,
+    }), (200 if ready else 503)
+
 
 @app.route('/api/music', methods=['GET'])
 def get_music_list():
     try:
         files = [f for f in os.listdir('assets') if f.endswith('.mp3')]
         return jsonify(sorted(files))
+    except StatsUnavailable:
+        raise
     except Exception as e:
         logger.error(f"Error listing music files: {e}", exc_info=True)
         return jsonify([])
@@ -302,6 +360,8 @@ def register():
             logger.info(f"New user registered: {username}")
             return jsonify({"success": True, "username": username})
         return jsonify({"error": "Username already taken"}), 400
+    except StatsUnavailable:
+        raise
     except Exception as e:
         logger.error(f"Error during registration: {e}", exc_info=True)
         return jsonify({"error": "Registration failed"}), 500
@@ -333,6 +393,8 @@ def login():
             return jsonify({"success": True, "username": username, "bankroll": bankroll})
         logger.warning(f"Failed login attempt from {client_ip}")
         return jsonify({"error": "Invalid credentials"}), 401
+    except StatsUnavailable:
+        raise
     except Exception as e:
         logger.error(f"Error during login: {e}", exc_info=True)
         return jsonify({"error": "Login failed"}), 500
@@ -365,6 +427,8 @@ def get_leaderboard():
         _leaderboard_cache["data"] = data
         _leaderboard_cache["timestamp"] = current_time
         return jsonify(data)
+    except StatsUnavailable:
+        raise
     except Exception as e:
         logger.error(f"Error getting leaderboard: {e}", exc_info=True)
         return jsonify({"error": "Failed to retrieve leaderboard"}), 500
@@ -373,9 +437,47 @@ def get_leaderboard():
 # --- Game Routes (per-user state, no shared mutable singleton) ---
 
 def _normalised_settings(raw):
+    """
+    Validate and normalise training settings at the trust boundary.
+
+    These are signed into the training token and replayed on every subsequent
+    /api/next, so an unchecked value does not fail once - it poisons the
+    session for the life of the token. `int(settings["table_size"])` on
+    arbitrary client input used to raise deep inside filter_scenarios and
+    surface as a 500.
+    """
+    if raw is not None and not isinstance(raw, dict):
+        raise InvalidSettings("settings must be an object")
+
     settings = dict(raw or {})
-    settings.setdefault("game_type", "Cash Game")
-    settings.setdefault("table_size", 6)
+
+    game_type = settings.setdefault("game_type", "Cash Game")
+    if game_type not in GAME_TYPES:
+        raise InvalidSettings(f"game_type must be one of {', '.join(GAME_TYPES)}")
+
+    try:
+        table_size = int(settings.setdefault("table_size", 6))
+    except (TypeError, ValueError) as e:
+        raise InvalidSettings("table_size must be a whole number") from e
+    if not 2 <= table_size <= 10:
+        raise InvalidSettings("table_size must be between 2 and 10")
+    settings["table_size"] = table_size
+
+    mode = settings.setdefault("training_mode", "Drill")
+    if mode not in TRAINING_MODES:
+        raise InvalidSettings(f"training_mode must be one of {', '.join(TRAINING_MODES)}")
+
+    position = settings.get("focus_position") or None
+    if position is not None and position not in POSITIONS:
+        raise InvalidSettings(f"focus_position must be one of {', '.join(POSITIONS)}")
+    settings["focus_position"] = position
+
+    situation = settings.get("focus_situation") or None
+    if situation is not None and situation not in SITUATIONS:
+        raise InvalidSettings(f"focus_situation must be one of {', '.join(SITUATIONS)}")
+    settings["focus_situation"] = situation
+
+    # Only one stack depth exists in the chart set; not client-controlled.
     settings["stack_depths"] = [100]
     return settings
 
@@ -443,6 +545,8 @@ def start():
         if payload is None:
             return jsonify({"error": "No charts match these settings."}), 400
         return jsonify(payload)
+    except StatsUnavailable:
+        raise
     except Exception as e:
         logger.error(f"Error starting training: {e}", exc_info=True)
         return jsonify({"error": "Failed to start training"}), 500
@@ -502,6 +606,8 @@ def act():
     except ValueError as e:
         logger.info("Unusable scenario in token for %s: %s", username, e)
         return jsonify({"error": "No active scenario. Start training first."}), 400
+    except StatsUnavailable:
+        raise
     except Exception as e:
         logger.error(f"Error processing action: {e}", exc_info=True)
         return jsonify({"error": "Failed to process action"}), 500
@@ -529,6 +635,8 @@ def next_hand():
         if payload is None:
             return jsonify({"error": "No charts match these settings."}), 400
         return jsonify(payload)
+    except StatsUnavailable:
+        raise
     except Exception as e:
         logger.error(f"Error getting next hand: {e}", exc_info=True)
         return jsonify({"error": "Failed to get next hand"}), 500
@@ -552,6 +660,8 @@ def get_stats():
             "review_queue": stats_mgr.count_tracked_reviews(u),
             "history": stats_mgr.get_recent_history(u)
         })
+    except StatsUnavailable:
+        raise
     except Exception as e:
         logger.error(f"Error getting statistics: {e}", exc_info=True)
         return jsonify({"error": "Failed to retrieve statistics"}), 500
@@ -566,6 +676,8 @@ def clear_stats():
         _leaderboard_cache["timestamp"] = 0
         logger.info(f"Statistics cleared for user: {session['user']}")
         return jsonify({"success": True})
+    except StatsUnavailable:
+        raise
     except Exception as e:
         logger.error(f"Error clearing statistics: {e}", exc_info=True)
         return jsonify({"error": "Failed to clear statistics"}), 500

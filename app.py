@@ -180,15 +180,26 @@ def evaluate_action(scenario, user_action):
 
     rec_data = strategy_mgr.get_recommended_action(chart_key, scenario.hero_hand)
     if not rec_data:
-        rec_data = {"action": Action.FOLD, "explanation": "Error"}
+        rec_data = {"action": Action.FOLD, "acceptable": [Action.FOLD], "explanation": "Error"}
+
+    # A hand on a boundary is accepted either way. Scoring it as a single
+    # right answer marked a legitimate line wrong roughly one drill in four,
+    # which over a session trains the mixed action out of the user.
+    acceptable = rec_data.get("acceptable") or [rec_data["action"]]
+    took_alternative = user_action in acceptable and user_action != rec_data["action"]
+
+    explanation = rec_data["explanation"]
+    if took_alternative and rec_data.get("alternative_explanation"):
+        explanation = rec_data["alternative_explanation"]
 
     return TrainingResult(
         scenario=scenario,
         user_action=user_action,
         correct_action=rec_data["action"],
-        explanation=rec_data["explanation"],
-        is_correct=(user_action == rec_data["action"]),
-        compiled_chart=compiled_chart
+        explanation=explanation,
+        is_correct=(user_action in acceptable),
+        compiled_chart=compiled_chart,
+        acceptable_actions=list(acceptable),
     )
 
 
@@ -196,10 +207,14 @@ def serialize_chart(chart):
     if not chart: return {}
     json_chart = {}
     for hand, data in chart.items():
+        acceptable = [a.value for a in data.get("acceptable", [data["action"]])]
         json_chart[hand] = {
             "action": data["action"].value,
-            "explanation": data["explanation"]
+            "explanation": data["explanation"],
         }
+        # Only sent when it adds something, to keep the per-hand payload small.
+        if len(acceptable) > 1:
+            json_chart[hand]["mix"] = acceptable
     return json_chart
 
 
@@ -597,6 +612,9 @@ def act():
 
         return jsonify({
             "is_correct": result.is_correct,
+            "is_close_decision": result.is_close_decision,
+            "took_alternative_line": result.took_alternative_line,
+            "acceptable_actions": [a.value for a in result.acceptable_actions],
             "explanation": result.explanation,
             "correct_action": result.correct_action.value,
             "chart": serialize_chart(result.compiled_chart),

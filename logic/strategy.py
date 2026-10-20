@@ -113,6 +113,8 @@ class StrategyManager:
         compiled_chart = {}
         meta = chart_data.get("metadata", {})
         actions = chart_data.get("actions", {})
+        mixes = chart_data.get("mixes") or {}
+        explanations = meta.get("explanations", {})
 
         for action_str, hands_list in actions.items():
             try:
@@ -121,9 +123,18 @@ class StrategyManager:
                 logger.warning(f"Unknown action '{action_str}' in chart, skipping")
                 continue
             for hand_range in hands_list:
+                # `acceptable` is every action that should score as correct.
+                # For most hands that is just the chart's own answer; for a
+                # hand on a boundary the chart states a hard line where real
+                # strategy has a gradient, so the alternative counts too.
+                allowed = mixes.get(hand_range) or [action_str]
                 compiled_chart[hand_range] = {
                     "action": action_enum,
-                    "explanation": meta.get("explanations", {}).get(action_str, "No explanation provided."),
+                    "acceptable": [Action[a.upper()] for a in allowed],
+                    "explanation": explanations.get(action_str, "No explanation provided."),
+                    "alternative_explanation": (
+                        explanations.get(allowed[1]) if len(allowed) > 1 else None
+                    ),
                 }
 
         return compiled_chart
@@ -144,7 +155,12 @@ class StrategyManager:
             logger.error(
                 "Chart %s has no entry for %s; defaulting to FOLD", situation_key, hand_notation
             )
-            return {"action": Action.FOLD, "explanation": "This hand is not in the strategy chart, defaulting to FOLD."}
+            return {
+                "action": Action.FOLD,
+                "acceptable": [Action.FOLD],
+                "explanation": "This hand is not in the strategy chart, defaulting to FOLD.",
+                "alternative_explanation": None,
+            }
 
         return action_data
 

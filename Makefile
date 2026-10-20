@@ -4,7 +4,7 @@ APP_NAME := poker-trainer
 PYTHON := venv/bin/python3
 
 # --- Commands ---
-.PHONY: all deploy build clean logs url test lint validate-charts check dev-install local-run db-start db-stop update wait-for-rollout check-tools check-login ensure-secret
+.PHONY: all deploy build clean logs url test lint validate-charts check dev-install derive-mixes local-run db-start db-stop update wait-for-rollout check-tools check-login ensure-secret
 
 # Default: Deploy everything
 all: deploy
@@ -82,6 +82,12 @@ lint:
 validate-charts:
 	@echo "🃏 Validating strategy charts..."
 	@$(PYTHON) scripts/validate_charts.py
+
+# Recompute which hands sit on an action boundary. Run after author_chart.py,
+# which rewrites the actions and would leave a stale block behind.
+derive-mixes:
+	@echo "🎲 Deriving close decisions..."
+	@$(PYTHON) scripts/derive_mixes.py
 
 # Everything CI runs, in the same order.
 check: lint validate-charts test

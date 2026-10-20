@@ -55,5 +55,9 @@
       "43o", "42o",
       "32o"
     ]
+  },
+  "mixes": {
+    "AKs": ["CALL", "FOLD"],
+    "AKo": ["CALL", "FOLD"]
   }
 }

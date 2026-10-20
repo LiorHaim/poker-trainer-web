@@ -177,7 +177,21 @@
         .act-RAISE { background: linear-gradient(135deg, #3b82f6, #2563eb); color: #fff; opacity: 1; }
         .act-CALL  { background: linear-gradient(135deg, #f59e0b, #d97706); color: #1a1a2e; opacity: 1; }
         .act-FOLD  { background: linear-gradient(135deg, #475569, #334155); color: #cbd5e1; opacity: 1; }
+        /* A hand the chart plays two ways is drawn split rather than as one
+           flat colour, so a close decision looks different from a pure one at
+           a glance. The diagonal reads as "either of these". */
+        .cell.is-mixed { position: relative; overflow: hidden; }
+        .cell.is-mixed::after {
+            content: '';
+            position: absolute; inset: 0;
+            background: var(--mix-alt);
+            clip-path: polygon(100% 0, 100% 100%, 0 100%);
+            opacity: 0.85;
+        }
+        .cell.is-mixed > span { position: relative; z-index: 1; }
+
         .legend-key { display: inline-flex; align-items: center; gap: 0.35rem; }
+        .swatch.mixed { background: linear-gradient(135deg, #3b82f6 50%, #f59e0b 50%); }
         .swatch { width: 10px; height: 10px; border-radius: 2px; display: inline-block; }
 
         /* The range is on screen the whole time, masked until the hand is
@@ -667,6 +681,7 @@
                             <span class="legend-key"><i class="swatch act-RAISE"></i>Raise</span>
                             <span class="legend-key"><i class="swatch act-CALL"></i>Call</span>
                             <span class="legend-key"><i class="swatch act-FOLD"></i>Fold</span>
+                            <span class="legend-key"><i class="swatch mixed"></i>Close</span>
                         </div>
                     </div>
 
@@ -1189,17 +1204,36 @@
 
             // Fill the panel that is already there rather than rebuilding it,
             // so nothing on screen moves when a hand is answered.
+            // Three outcomes, not two: the chart's own line, a legitimate
+            // alternative at a hand it plays two ways, and an actual mistake.
+            // Calling the middle one "Incorrect" was training the mixed action
+            // out of the user.
             const title = document.getElementById('fb-title');
-            title.textContent = result.is_correct ? 'Correct!' : 'Incorrect';
-            title.className = 'text-3xl font-display tracking-wider ' +
-                (result.is_correct ? 'text-emerald-400' : 'text-amber-400');
-            document.getElementById('fb-text').textContent = result.explanation;
+            let heading, colour;
+            if (result.took_alternative_line) {
+                heading = 'Also fine'; colour = 'text-sky-400';
+            } else if (result.is_correct) {
+                heading = result.is_close_decision ? 'Correct - close one' : 'Correct!';
+                colour = 'text-emerald-400';
+            } else {
+                heading = 'Incorrect'; colour = 'text-amber-400';
+            }
+            title.textContent = heading;
+            title.className = 'text-3xl font-display tracking-wider ' + colour;
+
+            let text = result.explanation;
+            if (result.is_close_decision) {
+                const [primary, alt] = result.acceptable_actions;
+                text = `${primary.toLowerCase()} and ${alt.toLowerCase()} are both playable here. ` + text;
+            }
+            document.getElementById('fb-text').textContent = text;
 
             lastChart = result.chart;
             renderMatrix(result.chart, result.hero_hand, 'matrix');
             document.getElementById('matrix').classList.remove('is-masked');
-            document.getElementById('matrix-state').textContent =
-                `${result.hero_hand} - ${result.correct_action.toLowerCase()}`;
+            document.getElementById('matrix-state').textContent = result.is_close_decision
+                ? `${result.hero_hand} - ${result.acceptable_actions.join(' or ').toLowerCase()}`
+                : `${result.hero_hand} - ${result.correct_action.toLowerCase()}`;
             fb.classList.remove('hidden');
 
             // On a narrow screen the answer column sits under the spot, so
@@ -1211,6 +1245,8 @@
             btns.forEach(b => { b.disabled = false; b.classList.remove('opacity-50'); });
         }
 
+        const ACTION_COLOURS = { RAISE: '#2563eb', CALL: '#d97706', FOLD: '#334155' };
+
         function renderMatrix(chart, heroHand, containerId) {
             let m = document.getElementById(containerId);
             m.innerHTML = '';
@@ -1220,9 +1256,20 @@
                 let hand = r==c ? r1+r2 : (r<c ? r1+r2+'s' : r2+r1+'o');
                 let div = document.createElement('div');
                 div.className = 'cell';
-                div.textContent = hand;
-                if (chart && chart[hand]) div.classList.add('act-' + chart[hand].action);
+                const entry = chart && chart[hand];
+                if (entry) {
+                    div.classList.add('act-' + entry.action);
+                    if (entry.mix) {
+                        // Second colour is the action the chart also accepts.
+                        div.classList.add('is-mixed');
+                        div.style.setProperty('--mix-alt', ACTION_COLOURS[entry.mix[1]]);
+                        div.title = `${hand}: ${entry.mix.join(' or ')} - close decision`;
+                    }
+                }
                 if (heroHand && hand === heroHand) div.classList.add('hero');
+                const label = document.createElement('span');
+                label.textContent = hand;
+                div.appendChild(label);
                 m.appendChild(div);
             }}
         }

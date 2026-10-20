@@ -67,5 +67,22 @@
       "43o", "42o",
       "32o"
     ]
+  },
+  "mixes": {
+    "QQ": ["RAISE", "CALL"],
+    "JJ": ["CALL", "RAISE"],
+    "88": ["CALL", "FOLD"],
+    "77": ["FOLD", "CALL"],
+    "AKs": ["RAISE", "CALL"],
+    "AQs": ["CALL", "RAISE"],
+    "AJs": ["CALL", "FOLD"],
+    "ATs": ["FOLD", "CALL"],
+    "A5s": ["RAISE", "FOLD"],
+    "A4s": ["RAISE", "FOLD"],
+    "A3s": ["FOLD", "RAISE"],
+    "KQs": ["CALL", "FOLD"],
+    "KJs": ["FOLD", "CALL"],
+    "AKo": ["RAISE", "CALL"],
+    "AJo": ["FOLD", "CALL"]
   }
 }

@@ -57,5 +57,19 @@
       "43o", "42o",
       "32o"
     ]
+  },
+  "mixes": {
+    "KK": ["RAISE", "CALL"],
+    "QQ": ["CALL", "RAISE"],
+    "TT": ["CALL", "FOLD"],
+    "99": ["FOLD", "CALL"],
+    "AKs": ["RAISE", "CALL"],
+    "AQs": ["CALL", "RAISE"],
+    "AJs": ["CALL", "FOLD"],
+    "ATs": ["FOLD", "CALL"],
+    "KQs": ["CALL", "FOLD"],
+    "KJs": ["FOLD", "CALL"],
+    "AKo": ["CALL", "FOLD"],
+    "AQo": ["FOLD", "CALL"]
   }
 }

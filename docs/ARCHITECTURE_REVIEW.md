@@ -1,5 +1,11 @@
 # Architecture review
 
+> **Status: F1, F2, F3, F5 and F10 are fixed** (commit `4480b46`) and verified
+> against the live cluster — see "Verification results" at the end. F4 (MongoDB
+> has no authentication) is the remaining High and is deliberately untouched,
+> because enabling auth on a database with data in it can take the app offline
+> and wants its own change. F6–F9 and F11 remain open.
+
 Reviewed at `2ebcdf6`, 2026-10-20. Scope: the whole system — domain, web layer,
 persistence, deployment. Findings are ordered by what would hurt first, not by
 how interesting they are.
@@ -307,3 +313,74 @@ Nothing above should land without a way to see that it worked.
 - Strategy charts stay read-only data loaded at import. If they become
   user-editable, the in-process cache across 4 workers becomes a coherence
   problem.
+
+
+---
+
+## 6. Verification results (2026-10-20)
+
+Run against the live OpenShift deployment, two replicas.
+
+### Before
+
+MongoDB scaled to zero:
+
+```
+/api/health   200  {"db_connected": true, "status": "healthy"}
+pods          both Ready, 0 restarts, route still routing
+register      {"error": "Username already taken"}
+login         {"error": "Invalid credentials"}
+leaderboard   []   (renders as "No players yet")
+```
+
+Worse than F1 predicted. The health check could not detect a missing database
+*at any point*, not merely after startup: `MongoClient` connects lazily and
+`_create_indexes` swallowed its own failure, so the manager constructed happily
+against a dead port. And the defaults did not merely hide the outage, they
+produced confident falsehoods — a user with the correct password was told it
+was wrong.
+
+### After
+
+Same outage, same cluster:
+
+```
+/api/health/live    200  {"status": "alive"}          <- no restarts
+/api/health/ready   503  {"db_connected": false}
+pods                both NotReady
+service endpoints   0                                  <- pulled from the LB
+restarts            0
+register / login    503  "Service temporarily unavailable - cannot reach the account store."
+leaderboard         503  "Service temporarily unavailable - cannot read the leaderboard."
+```
+
+Recovery after scaling MongoDB back up: readiness returned within ~6s with no
+intervention, zero restarts across the whole incident, 6 users and 142 hands
+intact.
+
+### F3
+
+`strategy: Recreate` applied, then a Mongo pod-spec change forced
+(`oc set env deploy/mongodb ROLLOUT_TEST=1`) — the exact operation that would
+previously have hung forever on a multi-attach error against the ReadWriteOnce
+volume:
+
+```
+deployment "mongodb" successfully rolled out
+```
+
+### F4 — demonstrated, not fixed
+
+A throwaway pod with no credentials, scheduled into the namespace:
+
+```
+connected with NO credentials from an unrelated pod
+collections: history, reviews, totals, users
+user accounts readable: 6
+password hashes exposed: yes
+decision history rows: 142
+```
+
+This is the remaining High. It needs MongoDB auth plus a default-deny
+NetworkPolicy, applied in that order, with a rollback plan — a mislabelled
+selector takes the app offline instantly.

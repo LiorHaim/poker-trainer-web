@@ -172,6 +172,61 @@ def validate_chart(chart_key: str, data: Any) -> list[ChartIssue]:
 
     issues += _validate_metadata(chart_key, meta)
     issues += _validate_actions(chart_key, meta, actions)
+    issues += _validate_mixes(chart_key, data.get("mixes"), actions)
+    return issues
+
+
+def _validate_mixes(chart_key: str, mixes, actions: dict) -> list[ChartIssue]:
+    """
+    Check the optional `mixes` block: hands the chart plays more than one way.
+
+    A chart assigns one action per hand, which states a hard line where real
+    strategy has a gradient. `mixes` records the hands sitting on such a line,
+    so a legitimate alternative is not scored as a mistake. See logic/mixes.py.
+    """
+    issues: list[ChartIssue] = []
+    if mixes is None:
+        return issues
+
+    def err(code: str, message: str) -> None:
+        issues.append(ChartIssue(chart_key, code, ERROR, message))
+
+    if not isinstance(mixes, dict):
+        err("bad-mixes", "`mixes` must be an object keyed by hand")
+        return issues
+
+    assigned = {hand: action for action, hands in actions.items()
+                if isinstance(hands, list) for hand in hands}
+
+    for hand, allowed in sorted(mixes.items()):
+        if not is_valid_hand(hand):
+            err("bad-mix-hand", f"{hand!r} in `mixes` is not canonical hand notation")
+            continue
+        if hand not in assigned:
+            err("mix-without-action", f"{hand} appears in `mixes` but has no action")
+            continue
+        if not isinstance(allowed, list) or len(allowed) < 2:
+            err("bad-mix", f"mixes.{hand} must list at least two actions")
+            continue
+        if len(set(allowed)) != len(allowed):
+            err("repeated-mix-action", f"mixes.{hand} repeats an action")
+        unknown = [a for a in allowed if a not in ACTIONS]
+        if unknown:
+            err("bad-mix-action", f"mixes.{hand} contains {unknown}, not in {ACTIONS}")
+            continue
+        if allowed[0] != assigned[hand]:
+            err(
+                "mix-primary-mismatch",
+                f"mixes.{hand} starts with {allowed[0]} but the chart assigns "
+                f"{assigned[hand]}; the chart's own action must come first",
+            )
+        if len(allowed) > len(ACTIONS) - 1:
+            err(
+                "mix-too-permissive",
+                f"mixes.{hand} accepts {len(allowed)} of {len(ACTIONS)} actions, "
+                f"which leaves no wrong answer",
+            )
+
     return issues
 
 

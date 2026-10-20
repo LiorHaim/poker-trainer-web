@@ -147,6 +147,59 @@ diff:
 Do not reformat a chart with `json.dump`; it flattens these groups and turns a
 one-line change into a 200-line diff.
 
+## `mixes` — hands the chart plays two ways
+
+Optional, and generated rather than hand-written:
+
+```json
+"mixes": {
+  "76s": ["RAISE", "FOLD"],
+  "75s": ["FOLD", "RAISE"]
+}
+```
+
+`actions` assigns one action per hand, which states a hard line where real
+preflop strategy has a gradient. About a quarter of reachable deals sit on such
+a line — 30% in the Big Blind defending spots. Scoring those as a single right
+answer marks a legitimate action wrong and docks the user, which over a session
+trains the mixed action out of them.
+
+Each entry lists the actions the trainer accepts. **The chart's own action must
+come first**, so it remains the primary recommendation; the rest are
+alternatives that score as correct and are reported as a close decision rather
+than a mistake.
+
+Regenerate after any change to `actions`:
+
+```bash
+python scripts/author_chart.py chart_sources/cash_6max_100bb.json   # writes actions
+python scripts/derive_mixes.py                                      # then mixes
+python scripts/derive_mixes.py --check                              # CI: is it stale?
+```
+
+The order matters — `author_chart.py` rewrites the file and would drop a stale
+block. `tests/test_mixes.py` fails if the committed mixes do not match the
+actions.
+
+### What the derivation does and does not claim
+
+It finds which hands are **close**, not how often to take each line. A hand is
+close when the hand immediately next to it in the range matrix is played
+differently: 76s is marginal precisely when 75s folds and 87s raises. That is
+structural and derivable. Real mixing *frequencies* need a solver, and are not
+invented here.
+
+Three guards keep it from saying something false, each with a test:
+
+| Guard | Why |
+|---|---|
+| At most one alternative | Accepting all three actions leaves no wrong answer. A hand pulled two ways keeps the chart's single answer. |
+| Reachable hands only | Hero cannot hold JJ facing a 5-bet they never 4-bet it with. |
+| Action groups of 3+ | In a two-hand group every member is an edge. With a raising range of `{AA, KK}`, KK touches a calling hand — but calling KK facing a jam is a mistake, not a close decision. |
+
+When solver output arrives, the same field can carry real frequencies without
+changing how anything else reads it.
+
 ## Cross-chart rules
 
 Checked by `validate_chart_set`:

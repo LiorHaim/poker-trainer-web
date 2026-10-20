@@ -55,5 +55,12 @@
       "43o", "42o",
       "32o"
     ]
+  },
+  "mixes": {
+    "QQ": ["CALL", "RAISE"],
+    "JJ": ["CALL", "FOLD"],
+    "AKs": ["CALL", "FOLD"],
+    "AQs": ["FOLD", "CALL"],
+    "AKo": ["CALL", "FOLD"]
   }
 }

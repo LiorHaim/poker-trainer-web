@@ -61,5 +61,37 @@
       "43o", "42o",
       "32o"
     ]
+  },
+  "mixes": {
+    "JJ": ["RAISE", "CALL"],
+    "TT": ["CALL", "RAISE"],
+    "55": ["CALL", "FOLD"],
+    "44": ["FOLD", "CALL"],
+    "AQs": ["RAISE", "CALL"],
+    "AJs": ["CALL", "RAISE"],
+    "A9s": ["CALL", "FOLD"],
+    "A8s": ["FOLD", "CALL"],
+    "A6s": ["FOLD", "RAISE"],
+    "A5s": ["RAISE", "FOLD"],
+    "A4s": ["RAISE", "FOLD"],
+    "A3s": ["FOLD", "RAISE"],
+    "K9s": ["CALL", "FOLD"],
+    "K8s": ["FOLD", "CALL"],
+    "Q9s": ["CALL", "FOLD"],
+    "Q8s": ["FOLD", "CALL"],
+    "J9s": ["CALL", "FOLD"],
+    "J8s": ["FOLD", "CALL"],
+    "T9s": ["CALL", "FOLD"],
+    "T8s": ["FOLD", "CALL"],
+    "98s": ["CALL", "FOLD"],
+    "97s": ["FOLD", "CALL"],
+    "87s": ["CALL", "FOLD"],
+    "86s": ["FOLD", "CALL"],
+    "AKo": ["RAISE", "CALL"],
+    "AQo": ["CALL", "RAISE"],
+    "AJo": ["CALL", "FOLD"],
+    "ATo": ["FOLD", "CALL"],
+    "KQo": ["CALL", "FOLD"],
+    "KJo": ["FOLD", "CALL"]
   }
 }

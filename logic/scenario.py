@@ -118,3 +118,18 @@ class TrainingResult:
     explanation: str
     is_correct: bool
     compiled_chart: dict[str, Any]
+
+    #: Every action the chart accepts here. More than one when the hand sits on
+    #: a boundary the chart draws as a hard line but real strategy plays as a
+    #: mix - see logic/mixes.py.
+    acceptable_actions: list = field(default_factory=list)
+
+    @property
+    def is_close_decision(self) -> bool:
+        """The chart would accept more than one action for this hand."""
+        return len(self.acceptable_actions) > 1
+
+    @property
+    def took_alternative_line(self) -> bool:
+        """Correct, but not the action the chart lists first."""
+        return self.is_correct and self.user_action != self.correct_action

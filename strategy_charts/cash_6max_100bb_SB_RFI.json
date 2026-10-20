@@ -66,5 +66,33 @@
       "43o", "42o",
       "32o"
     ]
+  },
+  "mixes": {
+    "Q4s": ["RAISE", "FOLD"],
+    "Q3s": ["FOLD", "RAISE"],
+    "J6s": ["RAISE", "FOLD"],
+    "J5s": ["FOLD", "RAISE"],
+    "T6s": ["RAISE", "FOLD"],
+    "T5s": ["FOLD", "RAISE"],
+    "96s": ["RAISE", "FOLD"],
+    "95s": ["FOLD", "RAISE"],
+    "86s": ["RAISE", "FOLD"],
+    "85s": ["FOLD", "RAISE"],
+    "75s": ["RAISE", "FOLD"],
+    "74s": ["FOLD", "RAISE"],
+    "64s": ["RAISE", "FOLD"],
+    "63s": ["FOLD", "RAISE"],
+    "54s": ["RAISE", "FOLD"],
+    "53s": ["FOLD", "RAISE"],
+    "K7o": ["RAISE", "FOLD"],
+    "K6o": ["FOLD", "RAISE"],
+    "Q9o": ["RAISE", "FOLD"],
+    "Q8o": ["FOLD", "RAISE"],
+    "J9o": ["RAISE", "FOLD"],
+    "J8o": ["FOLD", "RAISE"],
+    "T9o": ["RAISE", "FOLD"],
+    "T8o": ["FOLD", "RAISE"],
+    "98o": ["RAISE", "FOLD"],
+    "97o": ["FOLD", "RAISE"]
   }
 }

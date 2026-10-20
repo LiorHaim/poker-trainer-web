@@ -250,3 +250,40 @@ def test_valid_settings_still_work(client):
     )
     assert response.status_code == 200
     assert response.get_json()["hero_pos"] == "BTN"
+
+
+# --- Close decisions --------------------------------------------------------
+
+def test_a_legitimate_alternative_is_not_scored_as_a_mistake(client):
+    """
+    The point of the whole feature: at a hand the chart plays two ways, the
+    other action is accepted and reported as such rather than docked.
+    """
+    seen_close = False
+    token = client.post("/api/start", json={}).get_json()["token"]
+    for _ in range(80):
+        for action in ("RAISE", "CALL", "FOLD"):
+            result = client.post("/api/act", json={"action": action, "token": token}).get_json()
+            if result["is_close_decision"]:
+                seen_close = True
+                assert len(result["acceptable_actions"]) == 2
+                for allowed in result["acceptable_actions"]:
+                    outcome = client.post(
+                        "/api/act", json={"action": allowed, "token": token}
+                    ).get_json()
+                    assert outcome["is_correct"], f"{allowed} rejected at a close decision"
+                break
+        if seen_close:
+            break
+        token = client.post("/api/next", json={"token": token}).get_json()["token"]
+    assert seen_close, "no close decision came up in 80 hands"
+
+
+def test_the_matrix_marks_close_hands(client):
+    token = client.post("/api/start", json={}).get_json()["token"]
+    chart = client.post("/api/act", json={"action": "FOLD", "token": token}).get_json()["chart"]
+    mixed = [h for h, v in chart.items() if "mix" in v]
+    assert mixed, "no hand in the chart is marked as a close decision"
+    for hand in mixed:
+        assert len(chart[hand]["mix"]) == 2
+        assert chart[hand]["mix"][0] == chart[hand]["action"]

@@ -11,6 +11,7 @@ Built with Flask, MongoDB, and a lo-fi themed frontend.
 - **Adaptive Review** — spots you get wrong come back on a spaced-repetition schedule and stop appearing once you have them down
 - **Focus Mode** — practice a specific position or situation (e.g. "only BTN spots")
 - **Instant Feedback** — see whether your action matches the reference strategy, with a coaching explanation, without leaving the spot on screen
+- **Close Decisions** — hands the chart plays two ways are accepted either way and shown as a split cell, instead of marking a legitimate line wrong
 - **Visual Range Matrix** — the full chart sits beside the table the whole time, masked until you act, with your hand highlighted
 - **Leak Report** — overall accuracy, your weakest decision nodes, and the hand classes you misplay most
 - **Leaderboard** — compete with other users
@@ -56,7 +57,8 @@ it. Progress:
 | 1 | Collapse duplicate decision nodes; retune opening and blind-defense ranges | done |
 | 1b | Wire per-chart sizings; fix vs-4-bet semantics; delete dead `logic/trainer.py` | done |
 | 2 | Deal hands only from ranges that can reach the node | done |
-| 3 | Mixed-frequency charts and EV-loss scoring | blocked on solver data |
+| 3a | Close decisions: accept either action where the chart draws a hard line | done |
+| 3b | Real mixing frequencies and EV-loss scoring | needs solver exports |
 | 4 | Stateless scenario tokens, rollup stats, container hardening | done |
 | 5 | Zero-scroll drill loop, hero-at-bottom table, colour-blind-safe palette | done |
 | 6 | Spaced repetition and leak reporting | done |
@@ -145,6 +147,7 @@ docker run -p 8080:8080 -e MONGO_URI="mongodb://host.docker.internal:27017/poker
 | `make test` | Run the test suite (pytest) |
 | `make lint` | Run ruff |
 | `make validate-charts` | Validate every strategy chart against the schema |
+| `make derive-mixes` | Recompute which hands are close decisions (run after editing ranges) |
 | `make dev-install` | Install dev dependencies (pytest, ruff) |
 | `make deploy` | Build and deploy to OpenShift (generates `SECRET_KEY` on first run) |
 | `make ensure-secret` | Create the `SECRET_KEY` secret if it does not exist |

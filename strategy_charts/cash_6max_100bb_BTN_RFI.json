@@ -67,5 +67,35 @@
       "43o", "42o",
       "32o"
     ]
+  },
+  "mixes": {
+    "Q4s": ["RAISE", "FOLD"],
+    "Q3s": ["FOLD", "RAISE"],
+    "J6s": ["RAISE", "FOLD"],
+    "J5s": ["FOLD", "RAISE"],
+    "T6s": ["RAISE", "FOLD"],
+    "T5s": ["FOLD", "RAISE"],
+    "95s": ["RAISE", "FOLD"],
+    "94s": ["FOLD", "RAISE"],
+    "85s": ["RAISE", "FOLD"],
+    "84s": ["FOLD", "RAISE"],
+    "74s": ["RAISE", "FOLD"],
+    "73s": ["FOLD", "RAISE"],
+    "64s": ["RAISE", "FOLD"],
+    "63s": ["FOLD", "RAISE"],
+    "53s": ["RAISE", "FOLD"],
+    "52s": ["FOLD", "RAISE"],
+    "43s": ["RAISE", "FOLD"],
+    "42s": ["FOLD", "RAISE"],
+    "K8o": ["RAISE", "FOLD"],
+    "K7o": ["FOLD", "RAISE"],
+    "Q9o": ["RAISE", "FOLD"],
+    "Q8o": ["FOLD", "RAISE"],
+    "J9o": ["RAISE", "FOLD"],
+    "J8o": ["FOLD", "RAISE"],
+    "T9o": ["RAISE", "FOLD"],
+    "T8o": ["FOLD", "RAISE"],
+    "98o": ["RAISE", "FOLD"],
+    "97o": ["FOLD", "RAISE"]
   }
 }

@@ -53,6 +53,13 @@ items:
         containers:
         - name: mongodb
           image: docker.io/library/mongo:5.0
+          # --auth is set explicitly rather than via MONGO_INITDB_ROOT_*.
+          # Those env vars look like the way to do this, but they only create
+          # the root user on an EMPTY data directory - on a volume that already
+          # has data they still switch --auth on while creating nobody, which
+          # locks the application out entirely and leaves only the localhost
+          # exception. Verified in a scratch namespace before writing this.
+          args: ["--auth", "--bind_ip_all"]
           ports:
           - containerPort: 27017
           resources:
@@ -69,6 +76,29 @@ items:
         - name: mongo-storage
           persistentVolumeClaim:
             claimName: mongo-pvc
+
+# --- Only the application may reach the database ---
+# Scoped to the mongodb pod rather than a namespace-wide default-deny, which
+# would risk cutting the router off from the app. Before this, any pod
+# scheduled into the namespace could read every account and password hash.
+- apiVersion: networking.k8s.io/v1
+  kind: NetworkPolicy
+  metadata:
+    name: mongodb-only-from-app
+  spec:
+    podSelector:
+      matchLabels:
+        app: mongodb
+    policyTypes:
+    - Ingress
+    ingress:
+    - from:
+      - podSelector:
+          matchLabels:
+            app: poker-trainer
+      ports:
+      - protocol: TCP
+        port: 27017
 
 # --- Poker App ---
 - apiVersion: image.openshift.io/v1
@@ -117,8 +147,18 @@ items:
           ports:
           - containerPort: 8080
           env:
+          - name: MONGO_USERNAME
+            valueFrom:
+              secretKeyRef:
+                name: poker-trainer-secrets
+                key: mongo-username
+          - name: MONGO_PASSWORD
+            valueFrom:
+              secretKeyRef:
+                name: poker-trainer-secrets
+                key: mongo-password
           - name: MONGO_URI
-            value: "mongodb://mongodb:27017/poker"
+            value: "mongodb://$(MONGO_USERNAME):$(MONGO_PASSWORD)@mongodb:27017/poker"
           - name: FLASK_ENV
             value: "production"
           - name: SECRET_KEY

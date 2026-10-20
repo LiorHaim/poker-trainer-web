@@ -40,8 +40,14 @@ deploy: check-tools check-login
 #     then left alone: rotating it logs everyone out and voids hands in play.
 ensure-secret:
 	@oc get secret poker-trainer-secrets >/dev/null 2>&1 && echo "🔑 Secret already present, leaving it alone" || ( \
-		echo "🔑 Generating SECRET_KEY..." && \
-		oc create secret generic poker-trainer-secrets --from-literal=secret-key="$$(openssl rand -hex 32)" )
+		echo "🔑 Generating SECRET_KEY and MongoDB credentials..." && \
+		oc create secret generic poker-trainer-secrets \
+			--from-literal=secret-key="$$(openssl rand -hex 32)" \
+			--from-literal=mongo-username=poker \
+			--from-literal=mongo-password="$$(openssl rand -hex 24)" )
+	@oc get secret poker-trainer-secrets -o jsonpath='{.data.mongo-password}' | grep -q . || ( \
+		echo "🔑 Adding MongoDB credentials to the existing secret..." && \
+		oc patch secret poker-trainer-secrets -p "{\"stringData\":{\"mongo-username\":\"poker\",\"mongo-password\":\"$$(openssl rand -hex 24)\"}}" )
 
 # 3. Trigger a rebuild (use this after code changes)
 update: check-tools check-login

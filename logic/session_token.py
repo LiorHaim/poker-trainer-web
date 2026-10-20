@@ -11,14 +11,17 @@ the session covers, and which hand is live. Signing it keeps the client from
 editing the spot after seeing the answer, and makes the app horizontally
 scalable with no shared store.
 
-Note what this does *not* do: a token can be replayed, so the same hand can be
-answered more than once. The old dict allowed exactly the same thing, so this
-is not a regression, but closing it needs a nonce store (Redis) and is left for
-when the leaderboard is worth defending.
+Each token carries a nonce, so a dealt hand can be answered exactly once - see
+`StatisticsManagerDB.claim_answer`. Without it, re-submitting the same token
+logged a fresh decision every time, which was not a theoretical replay attack
+but something a user hit by clicking a button twice: the buttons stayed live
+after the result was shown, so one dealt hand could be answered with all three
+actions until one of them was right.
 """
 from __future__ import annotations
 
-from dataclasses import dataclass
+import secrets
+from dataclasses import dataclass, field
 from typing import Any
 
 from itsdangerous import BadSignature, SignatureExpired, URLSafeTimedSerializer
@@ -42,9 +45,17 @@ class TrainingToken:
     settings: dict[str, Any]
     chart_key: str | None = None
     hand: str | None = None
+    #: Identifies this specific deal, so answering it twice can be detected.
+    nonce: str = field(default_factory=lambda: secrets.token_urlsafe(12))
 
     def to_payload(self) -> dict:
-        return {"u": self.username, "s": self.settings, "c": self.chart_key, "h": self.hand}
+        return {
+            "u": self.username,
+            "s": self.settings,
+            "c": self.chart_key,
+            "h": self.hand,
+            "n": self.nonce,
+        }
 
     @classmethod
     def from_payload(cls, payload: Any) -> TrainingToken:
@@ -56,6 +67,7 @@ class TrainingToken:
             settings=settings if isinstance(settings, dict) else {},
             chart_key=payload.get("c"),
             hand=payload.get("h"),
+            nonce=payload.get("n") or "",
         )
 
 

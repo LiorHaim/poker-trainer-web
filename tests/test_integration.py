@@ -114,16 +114,35 @@ def test_full_game_loop(client):
     assert client.post("/api/next", json={"token": scenario["token"]}).status_code == 200
 
 
+def test_a_hand_can_only_be_answered_once(client):
+    """
+    The buttons used to stay live after the result was shown, so clicking
+    again logged another decision against the same hand - one deal could be
+    answered with all three actions until one was right, moving the bankroll
+    and the stats every time.
+    """
+    scenario = client.post("/api/start", json={}).get_json()
+    first = client.post("/api/act", json={"action": "FOLD", "token": scenario["token"]})
+    assert first.status_code == 200
+
+    for action in ("FOLD", "CALL", "RAISE"):
+        again = client.post("/api/act", json={"action": action, "token": scenario["token"]})
+        assert again.status_code == 409, f"{action} was accepted a second time"
+
+    assert client.get("/api/statistics").get_json()["overall"]["total"] == 1
+
+
 def test_the_answer_is_graded_against_the_hand_in_the_token(client):
     """
     The server keeps nothing between requests, so the token has to carry the
-    spot. Grading must use the hand it names, not a freshly dealt one.
+    spot: the graded hand must be the one that was dealt.
     """
     scenario = client.post("/api/start", json={}).get_json()
-    first = client.post("/api/act", json={"action": "FOLD", "token": scenario["token"]}).get_json()
-    second = client.post("/api/act", json={"action": "FOLD", "token": scenario["token"]}).get_json()
-    assert first["hero_hand"] == second["hero_hand"]
-    assert first["correct_action"] == second["correct_action"]
+    dealt = scenario["card1"]["rank"] + scenario["card2"]["rank"]
+    graded = client.post(
+        "/api/act", json={"action": "FOLD", "token": scenario["token"]}
+    ).get_json()["hero_hand"]
+    assert sorted(graded[:2]) == sorted(dealt), f"dealt {dealt}, graded {graded}"
 
 
 def test_a_tampered_token_is_rejected(client):
@@ -258,25 +277,28 @@ def test_a_legitimate_alternative_is_not_scored_as_a_mistake(client):
     """
     The point of the whole feature: at a hand the chart plays two ways, the
     other action is accepted and reported as such rather than docked.
+
+    Each hand is answered once - replaying a token to try the other action is
+    no longer possible - so this drills until a close decision turns up where
+    the action taken was not the chart's first choice.
     """
-    seen_close = False
     token = client.post("/api/start", json={}).get_json()["token"]
-    for _ in range(80):
-        for action in ("RAISE", "CALL", "FOLD"):
-            result = client.post("/api/act", json={"action": action, "token": token}).get_json()
-            if result["is_close_decision"]:
-                seen_close = True
-                assert len(result["acceptable_actions"]) == 2
-                for allowed in result["acceptable_actions"]:
-                    outcome = client.post(
-                        "/api/act", json={"action": allowed, "token": token}
-                    ).get_json()
-                    assert outcome["is_correct"], f"{allowed} rejected at a close decision"
-                break
-        if seen_close:
-            break
+    alternatives = 0
+    for _ in range(120):
+        result = client.post("/api/act", json={"action": "CALL", "token": token}).get_json()
+        if result["is_close_decision"]:
+            allowed = result["acceptable_actions"]
+            assert len(allowed) == 2
+            # A close decision need not involve calling - FOLD/RAISE is a real
+            # mix - so calling is only correct when it is one of the two.
+            assert result["is_correct"] == ("CALL" in allowed), (
+                f"called at a {'/'.join(allowed)} spot and was scored "
+                f"{'correct' if result['is_correct'] else 'wrong'}"
+            )
+            if result["took_alternative_line"]:
+                alternatives += 1
         token = client.post("/api/next", json={"token": token}).get_json()["token"]
-    assert seen_close, "no close decision came up in 80 hands"
+    assert alternatives, "no close decision resolved to the alternative line in 120 hands"
 
 
 def test_the_matrix_marks_close_hands(client):

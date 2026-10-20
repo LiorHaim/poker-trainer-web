@@ -598,6 +598,13 @@ def act():
     if meta is None:
         return jsonify({"error": "No active scenario. Start training first."}), 400
 
+    # One answer per dealt hand. The buttons used to stay live after the
+    # result was shown, so clicking again logged another decision against the
+    # same hand - a user could cycle all three actions until one was right,
+    # and every press moved their bankroll and stats.
+    if not stats_mgr.claim_answer(token.nonce):
+        return jsonify({"error": "This hand has already been answered."}), 409
+
     try:
         scenario = build_scenario(
             {**meta, "chart_key": token.chart_key},

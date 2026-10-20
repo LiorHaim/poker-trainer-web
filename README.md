@@ -78,9 +78,9 @@ plus a signed token describing the session's filters and the live hand;
 dict that made the app correct only at a single worker — a hand started on one
 worker could not be answered on another — and that grew without bound.
 
-A token is bound to the account it was issued to and expires after 12 hours.
-It can still be replayed, so the same hand can be answered twice; the dict
-allowed that too, and closing it needs a shared nonce store.
+A token is bound to the account it was issued to, expires after 12 hours, and
+carries a nonce so a dealt hand can be answered exactly once — a repeat answer
+is rejected with 409.
 
 ## Tech Stack
 

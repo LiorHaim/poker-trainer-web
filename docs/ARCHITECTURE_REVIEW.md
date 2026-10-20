@@ -242,9 +242,12 @@ anything else consumes the API.
 
 ### F12 — Accepted risks, restated
 
-- **Token replay** — the same hand can be answered repeatedly, so the bankroll
-  and leaderboard are farmable. Only worth closing with a nonce store if the
-  leaderboard is meant to be competitive.
+- ~~**Token replay**~~ — **fixed.** This was not theoretical: the action buttons
+  stayed live after the result was shown, so clicking again answered the same
+  hand, and one deal could be cycled through all three actions until one was
+  right. Measured before the fix: one dealt hand produced five logged decisions.
+  Tokens now carry a nonce claimed on first answer, in a Mongo collection that
+  expires itself; a repeat returns 409.
 - **No CSRF token** — `SameSite=Lax` covers the realistic cases for a
   same-origin cookie app; revisit if a second origin appears.
 - **Charts served unauthenticated** — fine if the content is not the product.

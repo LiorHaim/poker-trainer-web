@@ -12,6 +12,7 @@ from logic import review, session_token
 from logic.chart_schema import POSITIONS, SITUATIONS
 from logic.nodes import build_scenario
 from logic.scenario import Action, Hand, TrainingResult, random_hand_of
+from logic.serialize import serialize_chart, serialize_scenario
 from logic.statistics_db import StatisticsManagerDB, StatsUnavailable
 from logic.strategy import StrategyManager
 
@@ -201,39 +202,6 @@ def evaluate_action(scenario, user_action):
         compiled_chart=compiled_chart,
         acceptable_actions=list(acceptable),
     )
-
-
-def serialize_chart(chart):
-    if not chart: return {}
-    json_chart = {}
-    for hand, data in chart.items():
-        acceptable = [a.value for a in data.get("acceptable", [data["action"]])]
-        json_chart[hand] = {
-            "action": data["action"].value,
-            "explanation": data["explanation"],
-        }
-        # Only sent when it adds something, to keep the per-hand payload small.
-        if len(acceptable) > 1:
-            json_chart[hand]["mix"] = acceptable
-    return json_chart
-
-
-def serialize_scenario(sc):
-    if not sc: return None
-    return {
-        "hero_pos": sc.hero_position.value,
-        "stack": sc.effective_stack_bb,
-        "pot": sc.pot_bb,
-        "situation": sc.situation,
-        "actions": [{"pos": a.position.value, "act": a.action.value, "amt": a.size_bb} for a in sc.actions_before_hero],
-        "card1": {"rank": sc.hero_hand.card1.rank, "suit": sc.hero_hand.card1.suit},
-        "card2": {"rank": sc.hero_hand.card2.rank, "suit": sc.hero_hand.card2.suit},
-        "to_call": sc.to_call_bb,
-        # Labels come from the node definition so the UI does not keep its own
-        # copy of what each situation means.
-        "raise_label": sc.raise_label,
-        "action_text": sc.action_text,
-    }
 
 
 # --- Static Routes ---

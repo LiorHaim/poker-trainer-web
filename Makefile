@@ -4,7 +4,7 @@ APP_NAME := poker-trainer
 PYTHON := venv/bin/python3
 
 # --- Commands ---
-.PHONY: all deploy build clean logs url test lint validate-charts check dev-install derive-mixes css local-run db-start db-stop update wait-for-rollout check-tools check-login ensure-secret
+.PHONY: all deploy build clean logs url test lint validate-charts check dev-install derive-mixes css export-offline local-run db-start db-stop update wait-for-rollout check-tools check-login ensure-secret
 
 # Default: Deploy everything
 all: deploy
@@ -100,6 +100,13 @@ css:
 derive-mixes:
 	@echo "🎲 Deriving close decisions..."
 	@$(PYTHON) scripts/derive_mixes.py
+
+# Write the chart bundle the offline app (LiorHaim/poker-trainer-offline) runs
+# on. Re-run after any chart change, then commit and deploy it over there.
+OUT ?= ../poker-trainer-offline/data/bundle.json
+export-offline:
+	@echo "📱 Exporting offline bundle..."
+	@$(PYTHON) scripts/export_offline_bundle.py --out $(OUT)
 
 # Everything CI runs, in the same order.
 check: lint validate-charts test

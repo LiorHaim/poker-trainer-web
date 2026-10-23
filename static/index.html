@@ -42,6 +42,35 @@
         }
         body > * { position: relative; z-index: 1; }
 
+        /* --- Touch --- */
+        /* No double-tap zoom on the buttons you tap fastest. */
+        button, select, .cell { touch-action: manipulation; }
+        /* A long press on a button or card should not select its text or
+           open the iOS callout. */
+        button, .card, .cell, .seat { -webkit-user-select: none; user-select: none; -webkit-touch-callout: none; }
+        /* Apple's minimum touch target. */
+        #app-header button { min-width: 44px; min-height: 44px; display: inline-flex; align-items: center; justify-content: center; }
+        button[aria-label="Back to Menu"], button[aria-label="Back"] { min-height: 44px; }
+        /* Keyboard shortcuts mean nothing on a touch screen. */
+        @media (hover: none) and (pointer: coarse) { .kbd-hint { display: none !important; } }
+
+        /* --- Drill on a phone --- */
+        /* The spot, the buttons and the result all have to fit on one screen,
+           or every hand costs a scroll down to answer and another back up to
+           see the next deal. So while drilling, the account header gives way
+           to a slim bar, the HUD packs into one row, and the result takes the
+           buttons' place - right under the thumb - with the range below it. */
+        @media (max-width: 1023px) {
+            body.is-training #app-header { display: none; }
+            #train-view.answered #controls { display: none; }
+            #feedback:not(.hidden) { display: flex; flex-direction: column; }
+            #next-btn { order: 1; }
+            #fb-text-box { order: 2; }
+            .train-grid > div:first-child, .answer-column { display: contents; }
+            .answer-column > :first-child { order: 2; }
+            .poker-table { margin: 1rem auto 1.25rem; }
+        }
+
         /* --- Realistic Cards --- */
         .card {
             background: linear-gradient(145deg, #fffef8 0%, #f5f0e6 40%, #ede8d8 100%);
@@ -70,7 +99,7 @@
             .card .text-xl { font-size: 1rem; line-height: 1; }
             .card .text-5xl { font-size: 2.5rem; }
         }
-        .card:hover { transform: translateY(-8px) rotate(0deg) !important; box-shadow: 0 4px 8px rgba(0,0,0,0.15), 0 16px 32px rgba(0,0,0,0.25), 0 24px 48px rgba(0,0,0,0.2), 0 0 60px rgba(16,185,129,0.08); }
+        @media (hover: hover) { .card:hover { transform: translateY(-8px) rotate(0deg) !important; box-shadow: 0 4px 8px rgba(0,0,0,0.15), 0 16px 32px rgba(0,0,0,0.25), 0 24px 48px rgba(0,0,0,0.2), 0 0 60px rgba(16,185,129,0.08); } }
         .card::before {
             content: '';
             position: absolute;
@@ -160,7 +189,9 @@
              .cell { font-size: 0.45rem; border-radius: 2px; }
              .matrix { gap: 1px; }
         }
-        .cell:hover { opacity: 1; z-index: 5; transform: scale(1.15); box-shadow: 0 0 8px rgba(0,0,0,0.5); border-radius: 4px; }
+        /* Hover-capable devices only: on a touch screen a tap leaves :hover
+           stuck, so the cell stayed enlarged and the card stayed lifted. */
+        @media (hover: hover) { .cell:hover { opacity: 1; z-index: 5; transform: scale(1.15); box-shadow: 0 0 8px rgba(0,0,0,0.5); border-radius: 4px; } }
         /* Blue / amber / slate instead of green / amber / red. Around 8% of men
            cannot reliably separate red from green, which made the old palette
            unreadable for them - and red-vs-green was carrying the single most
@@ -189,6 +220,10 @@
         /* The range is on screen the whole time, masked until the hand is
            answered, so it reads as reference rather than a reveal. */
         .matrix.is-masked .cell { color: transparent; background: #1b2232; opacity: 0.45; cursor: default; }
+        /* The split drawn for a close decision is a pseudo-element, so the
+           mask above does not cover it - and it is left over from the last
+           hand's chart, so it pointed at the wrong hands as well as leaking. */
+        .matrix.is-masked .cell.is-mixed::after { display: none; }
         .cell.selected { outline: 2px solid #e2e8f0; outline-offset: -2px; z-index: 6; }
         .matrix-detail {
             min-height: 3.2rem;
@@ -481,6 +516,9 @@
             50% { box-shadow: 0 0 20px rgba(245,158,11,0.6), 0 0 40px rgba(239,68,68,0.2); }
         }
         .streak-fire { animation: streakGlow 1.5s ease-in-out infinite; }
+        /* .streak-fire sets display, which beat Tailwind's .hidden and left an
+           empty glowing pill on screen whenever there was no streak. */
+        .streak-fire.hidden { display: none; }
 
         /* --- Win Glow --- */
         @keyframes winGlow {
@@ -566,13 +604,13 @@
     <!-- Main App (Hidden until login) -->
     <div id="main-app" class="hidden w-full max-w-3xl animate-deal transition-opacity duration-300" role="main">
         <!-- Header -->
-        <div class="flex flex-wrap gap-4 justify-between items-center mb-8 hud-panel p-4 rounded-2xl">
+        <div id="app-header" class="flex flex-wrap gap-4 justify-between items-center mb-8 hud-panel p-4 rounded-2xl">
             <div class="flex flex-col">
-                <span class="text-[9px] text-gray-400 uppercase font-bold tracking-[0.2em]">Player</span>
+                <span class="text-[10px] text-gray-400 uppercase font-bold tracking-[0.2em]">Player</span>
                 <span id="player-name" class="text-lg font-bold text-white">Hero</span>
             </div>
             <div class="flex flex-col items-center order-first w-full md:w-auto md:order-none">
-                 <div class="text-[9px] text-gray-400 uppercase font-bold tracking-[0.2em] mb-1">Bankroll</div>
+                 <div class="text-[10px] text-gray-400 uppercase font-bold tracking-[0.2em] mb-1">Bankroll</div>
                  <div class="text-3xl font-display text-emerald-400 tracking-wider" id="bankroll" aria-live="polite">$10,000</div>
             </div>
             <div class="flex gap-2 items-center">
@@ -627,16 +665,16 @@
              action buttons, which put it past the bottom of the viewport, so
              every single hand cost a scroll. -->
         <div id="train-view" class="hidden fade-in">
-            <div class="flex justify-between items-center text-[10px] text-gray-600 font-semibold tracking-[0.2em] uppercase mb-4"><button onclick="showSetup()" class="hover:text-white transition bg-white/5 px-3 py-1.5 rounded-lg hover:bg-white/10 border border-white/5 text-gray-500" aria-label="Back to Menu">&larr; MENU</button><span class="hidden sm:inline font-display text-sm tracking-[0.3em] text-gray-500">TEXAS HOLD'EM NL 6-MAX</span></div>
+            <div class="flex justify-between items-center text-[10px] text-gray-600 font-semibold tracking-[0.2em] uppercase mb-4"><button onclick="showSetup()" class="hover:text-white transition bg-white/5 px-3 py-1.5 rounded-lg hover:bg-white/10 border border-white/5 text-gray-500" aria-label="Back to Menu">&larr; MENU</button><span class="hidden lg:inline font-display text-sm tracking-[0.3em] text-gray-500">TEXAS HOLD'EM NL 6-MAX</span><span class="lg:hidden font-display text-2xl text-emerald-400 tracking-wider normal-case" id="bankroll-mini" aria-hidden="true">$10,000</span></div>
 
             <div class="train-grid">
                 <!-- Left: the spot -->
                 <div class="flex flex-col gap-3">
-                    <div class="grid grid-cols-2 md:grid-cols-4 gap-2 text-center">
-                        <div class="hud-panel p-2.5 rounded-xl"><div class="text-[9px] text-gray-400 font-bold uppercase tracking-[0.2em]">Position</div><div id="pos-val" class="text-xl font-display text-white tracking-wider mt-0.5">BTN</div></div>
-                        <div class="hud-panel p-2.5 rounded-xl"><div class="text-[9px] text-gray-400 font-bold uppercase tracking-[0.2em]">Stack</div><div class="text-xl font-display text-white tracking-wider mt-0.5">100 <span class="text-xs text-gray-500 font-body">BB</span></div></div>
-                        <div class="hud-panel p-2.5 rounded-xl"><div class="text-[9px] text-gray-400 font-bold uppercase tracking-[0.2em]">Pot</div><div id="pot-val" class="text-xl font-display text-emerald-400 tracking-wider mt-0.5">1.5 <span class="text-xs text-gray-500 font-body">BB</span></div></div>
-                        <div class="hud-panel p-2.5 rounded-xl border-l-2 border-amber-400/50 col-span-2 md:col-span-1 flex flex-col justify-center"><div class="text-[9px] text-gray-400 font-bold uppercase tracking-[0.2em]">Action</div><div id="act-val" class="text-xs font-semibold text-amber-300 leading-tight mt-1 px-1">...</div></div>
+                    <div class="grid grid-cols-3 md:grid-cols-4 gap-2 text-center">
+                        <div class="hud-panel p-2.5 rounded-xl"><div class="text-[10px] text-gray-400 font-bold uppercase tracking-[0.2em]">Position</div><div id="pos-val" class="text-xl font-display text-white tracking-wider mt-0.5">BTN</div></div>
+                        <div class="hud-panel p-2.5 rounded-xl"><div class="text-[10px] text-gray-400 font-bold uppercase tracking-[0.2em]">Stack</div><div class="text-xl font-display text-white tracking-wider mt-0.5"><span id="stack-val">100</span> <span class="text-xs text-gray-500 font-body">BB</span></div></div>
+                        <div class="hud-panel p-2.5 rounded-xl"><div class="text-[10px] text-gray-400 font-bold uppercase tracking-[0.2em]">Pot</div><div id="pot-val" class="text-xl font-display text-emerald-400 tracking-wider mt-0.5">1.5 <span class="text-xs text-gray-500 font-body">BB</span></div></div>
+                        <div class="hud-panel p-2.5 rounded-xl border-l-2 border-amber-400/50 col-span-3 md:col-span-1 flex flex-col justify-center"><div class="text-[10px] text-gray-400 font-bold uppercase tracking-[0.2em]">Action</div><div id="act-val" class="text-xs font-semibold text-amber-300 leading-tight mt-1 px-1">...</div></div>
                     </div>
 
                     <div class="session-bar" id="session-bar">
@@ -664,12 +702,12 @@
                     </div>
 
                     <div id="controls" class="grid grid-cols-3 gap-2 md:gap-3">
-                        <button onclick="act('FOLD')" class="btn-action btn-3d btn-fold h-16 md:h-20 rounded-xl text-xl md:text-2xl shadow-lg flex flex-col justify-center items-center" aria-label="Fold (F key)">Fold <span class="text-[10px] opacity-60 font-body font-normal tracking-normal">(F)</span></button>
+                        <button onclick="act('FOLD')" class="btn-action btn-3d btn-fold h-16 md:h-20 rounded-xl text-xl md:text-2xl shadow-lg flex flex-col justify-center items-center" aria-label="Fold (F key)">Fold <span class="kbd-hint text-[10px] opacity-60 font-body font-normal tracking-normal">(F)</span></button>
                         <button onclick="act('CALL')" id="btn-call" class="btn-action btn-3d btn-call h-16 md:h-20 rounded-xl text-xl md:text-2xl shadow-lg flex flex-col justify-center items-center" aria-label="Call (C key)">Call <span class="text-[10px] opacity-60 font-body font-normal tracking-normal">(C)</span></button>
                         <button onclick="act('RAISE')" id="btn-raise" class="btn-action btn-3d btn-raise h-16 md:h-20 rounded-xl text-xl md:text-2xl shadow-lg flex flex-col justify-center items-center" aria-label="Raise (R key)">Raise <span class="text-[10px] opacity-60 font-body font-normal tracking-normal">(R)</span></button>
                     </div>
 
-                    <div class="text-center text-[10px] tracking-wider text-gray-500 space-x-3">
+                    <div class="kbd-hint text-center text-[10px] tracking-wider text-gray-500 space-x-3">
                         <kbd>F</kbd> Fold <span class="text-gray-700">&middot;</span> <kbd>C</kbd> Call <span class="text-gray-700">&middot;</span> <kbd>R</kbd> Raise <span class="text-gray-700">&middot;</span> <kbd>Space</kbd> Next
                     </div>
                 </div>
@@ -679,12 +717,12 @@
                 <aside class="answer-column" aria-label="Strategy">
                     <div class="bg-gray-900/50 backdrop-blur p-3 rounded-2xl border border-white/5 shadow-xl">
                         <div class="flex items-baseline justify-between mb-2">
-                            <span class="text-[9px] text-gray-400 uppercase font-bold tracking-[0.2em]">Range</span>
-                            <span id="matrix-state" class="text-[9px] text-gray-600 uppercase tracking-[0.15em]">hidden until you act</span>
+                            <span class="text-[10px] text-gray-400 uppercase font-bold tracking-[0.2em]">Range</span>
+                            <span id="matrix-state" class="text-[10px] text-gray-600 uppercase tracking-[0.15em]">hidden until you act</span>
                         </div>
                         <div id="matrix" class="matrix is-masked"></div>
                         <div id="matrix-detail" class="matrix-detail">Click any hand to see why it plays that way.</div>
-                        <div class="flex gap-3 justify-center mt-3 text-[9px] uppercase tracking-[0.15em] text-gray-400">
+                        <div class="flex gap-3 justify-center mt-3 text-[10px] uppercase tracking-[0.15em] text-gray-400">
                             <span class="legend-key"><i class="swatch act-RAISE"></i>Raise</span>
                             <span class="legend-key"><i class="swatch act-CALL"></i>Call</span>
                             <span class="legend-key"><i class="swatch act-FOLD"></i>Fold</span>
@@ -695,8 +733,8 @@
                     <div id="feedback" class="hidden bg-gray-900/70 backdrop-blur-lg p-4 rounded-2xl border border-white/5 shadow-2xl fade-in" role="alert" aria-live="assertive">
                         <div class="text-[10px] text-gray-400 uppercase font-bold tracking-[0.2em]">Result</div>
                         <h2 id="fb-title" class="text-3xl font-display tracking-wider">Correct!</h2>
-                        <div class="bg-black/30 p-3 rounded-lg border-l-2 border-sky-500/50 mt-3"><p id="fb-text" class="text-gray-400 text-sm leading-relaxed"></p></div>
-                        <button id="next-btn" onclick="nextHand()" class="w-full bg-emerald-600 hover:bg-emerald-500 text-white py-3 rounded-xl font-display text-lg tracking-widest btn-3d border-b-emerald-800 mt-3 shadow-lg focus:ring-4 focus:ring-emerald-500/30 outline-none cursor-pointer">NEXT HAND (SPACE) &rarr;</button>
+                        <div id="fb-text-box" class="bg-black/30 p-3 rounded-lg border-l-2 border-sky-500/50 mt-3"><p id="fb-text" class="text-gray-400 text-sm leading-relaxed"></p></div>
+                        <button id="next-btn" onclick="nextHand()" class="w-full bg-emerald-600 hover:bg-emerald-500 text-white py-3 rounded-xl font-display text-lg tracking-widest btn-3d border-b-emerald-800 mt-3 shadow-lg focus:ring-4 focus:ring-emerald-500/30 outline-none cursor-pointer">NEXT HAND <span class="kbd-hint">(SPACE)</span> &rarr;</button>
                     </div>
                 </aside>
             </div>
@@ -754,15 +792,15 @@
     <div id="volume-panel" class="volume-panel">
         <div class="mb-3">
             <div class="flex justify-between items-center mb-1.5">
-                <span class="text-[9px] text-gray-400 uppercase font-bold tracking-[0.15em]">Music</span>
-                <span id="music-vol-val" class="text-[9px] text-gray-500 font-mono">50%</span>
+                <span class="text-[10px] text-gray-400 uppercase font-bold tracking-[0.15em]">Music</span>
+                <span id="music-vol-val" class="text-[10px] text-gray-500 font-mono">50%</span>
             </div>
             <input type="range" min="0" max="100" value="50" class="volume-slider" id="music-volume" oninput="setMusicVolume(this.value)">
         </div>
         <div>
             <div class="flex justify-between items-center mb-1.5">
-                <span class="text-[9px] text-gray-400 uppercase font-bold tracking-[0.15em]">SFX</span>
-                <span id="sfx-vol-val" class="text-[9px] text-gray-500 font-mono">70%</span>
+                <span class="text-[10px] text-gray-400 uppercase font-bold tracking-[0.15em]">SFX</span>
+                <span id="sfx-vol-val" class="text-[10px] text-gray-500 font-mono">70%</span>
             </div>
             <input type="range" min="0" max="100" value="70" class="volume-slider" id="sfx-volume" oninput="setSfxVolume(this.value)">
         </div>
@@ -937,7 +975,7 @@
                         document.getElementById('login-view').classList.add('hidden');
                         document.getElementById('main-app').classList.remove('hidden');
                         document.getElementById('player-name').textContent = d.username;
-                        if(d.bankroll !== undefined) document.getElementById('bankroll').textContent = "$" + d.bankroll.toLocaleString();
+                        if(d.bankroll !== undefined) setBankroll(d.bankroll);
                     })
                 }
             });
@@ -950,14 +988,22 @@
             bgMusic.addEventListener('play', () => document.getElementById('music-btn').classList.add('music-playing'));
         });
 
-        function showSetup() {
-            ['setup-view', 'train-view', 'stats-view', 'study-view', 'leaderboard-view'].forEach(id => document.getElementById(id)?.classList.add('hidden'));
-            document.getElementById('setup-view').classList.remove('hidden');
-        }
+        function showSetup() { showView('setup-view'); }
         function showView(id) {
             ['setup-view', 'leaderboard-view', 'train-view', 'stats-view', 'study-view'].forEach(v => document.getElementById(v)?.classList.add('hidden'));
             document.getElementById(id).classList.remove('hidden');
+            document.body.classList.toggle('is-training', id === 'train-view');
+            window.scrollTo(0, 0);
         }
+
+        // The header and the slim bar shown while drilling on a phone.
+        function setBankroll(value) {
+            const text = "$" + value.toLocaleString();
+            document.getElementById('bankroll').textContent = text;
+            document.getElementById('bankroll-mini').textContent = text;
+        }
+
+        function isPhoneLayout() { return window.matchMedia('(max-width: 1023px)').matches; }
 
         let isLoading = false;
 
@@ -1027,7 +1073,7 @@
                     document.getElementById('login-view').classList.add('hidden');
                     document.getElementById('main-app').classList.remove('hidden');
                     document.getElementById('player-name').textContent = data.username;
-                    if(data.bankroll !== undefined) document.getElementById('bankroll').textContent = "$" + data.bankroll.toLocaleString();
+                    if(data.bankroll !== undefined) setBankroll(data.bankroll);
                     playSfx('sfx-chip');
                 } else {
                     msg(data.error || 'Authentication failed');
@@ -1068,6 +1114,12 @@
             document.getElementById('hand-count').textContent = handCount;
             document.getElementById('pos-val').textContent = sc.hero_pos;
             document.getElementById('pot-val').textContent = sc.pot + " BB";
+            // Was hardcoded to 100, so 40bb spots showed the wrong stack.
+            document.getElementById('stack-val').textContent = sc.stack;
+            // On a phone the result replaced the buttons; bring them back and
+            // put the new deal on screen.
+            document.getElementById('train-view').classList.remove('answered');
+            if (isPhoneLayout()) window.scrollTo(0, 0);
 
             renderTable(sc);
 
@@ -1078,8 +1130,8 @@
             let callLabel = sc.to_call > 0 ? `Call (${sc.to_call.toFixed(1)})` : "Check";
             let raiseLabel = sc.raise_label || "Raise";
 
-            document.getElementById('btn-call').innerHTML = `${callLabel} <span class="text-[10px] md:text-xs opacity-50 font-body font-normal tracking-normal">(C)</span>`;
-            document.getElementById('btn-raise').innerHTML = `${raiseLabel} <span class="text-[10px] md:text-xs opacity-50 font-body font-normal tracking-normal">(R)</span>`;
+            document.getElementById('btn-call').innerHTML = `${callLabel} <span class="kbd-hint text-[10px] md:text-xs opacity-50 font-body font-normal tracking-normal">(C)</span>`;
+            document.getElementById('btn-raise').innerHTML = `${raiseLabel} <span class="kbd-hint text-[10px] md:text-xs opacity-50 font-body font-normal tracking-normal">(R)</span>`;
 
             renderCard('card1', sc.card1); renderCard('card2', sc.card2);
             document.getElementById('controls').classList.remove('hidden');
@@ -1209,7 +1261,7 @@
             if (navigator.vibrate) navigator.vibrate(result.is_correct ? [50] : [100, 50, 100]);
 
             const bankrollEl = document.getElementById('bankroll');
-            bankrollEl.textContent = "$" + result.bankroll.toLocaleString();
+            setBankroll(result.bankroll);
             bankrollEl.classList.remove('bankroll-up', 'bankroll-down');
             void bankrollEl.offsetWidth;
             bankrollEl.classList.add(result.bankroll >= oldBankroll ? 'bankroll-up' : 'bankroll-down');
@@ -1252,11 +1304,12 @@
                 ? `${result.hero_hand} - ${result.acceptable_actions.join(' or ').toLowerCase()}`
                 : `${result.hero_hand} - ${result.correct_action.toLowerCase()}`;
             fb.classList.remove('hidden');
+            document.getElementById('train-view').classList.add('answered');
 
-            // On a narrow screen the answer column sits under the spot, so
-            // bring it into view; on a wide one it is already beside it.
-            if (window.matchMedia('(max-width: 1023px)').matches) {
-                fb.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+            // On a phone the result sits where the buttons were, so the next
+            // button is normally already on screen; only scroll if it is not.
+            if (isPhoneLayout()) {
+                document.getElementById('next-btn').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
             }
             document.getElementById('next-btn').focus({ preventScroll: true });
         }

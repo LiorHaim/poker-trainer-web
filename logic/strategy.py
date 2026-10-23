@@ -32,6 +32,10 @@ from .scenario import Action, Hand
 logger = logging.getLogger(__name__)
 
 
+#: Shown for an action the chart gives no explanation for.
+NO_EXPLANATION = "No explanation provided."
+
+
 class ChartValidationError(RuntimeError):
     """Raised in strict mode when a chart fails validation."""
 
@@ -131,7 +135,7 @@ class StrategyManager:
                 compiled_chart[hand_range] = {
                     "action": action_enum,
                     "acceptable": [Action[a.upper()] for a in allowed],
-                    "explanation": explanations.get(action_str, "No explanation provided."),
+                    "explanation": explanations.get(action_str, NO_EXPLANATION),
                     "alternative_explanation": (
                         explanations.get(allowed[1]) if len(allowed) > 1 else None
                     ),

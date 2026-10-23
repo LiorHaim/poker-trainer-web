@@ -54,6 +54,11 @@ class ReachabilitySampler:
         entry = self._pools.get(chart_key)
         return list(entry[0]) if entry else None
 
+    def weighted_pool(self, chart_key: str) -> tuple[list[str], list[int]] | None:
+        """The hand classes hero can hold here with their combo weights, or None for the full deck."""
+        entry = self._pools.get(chart_key)
+        return (list(entry[0]), list(entry[1])) if entry else None
+
     def deal(self, chart_key: str) -> Hand:
         """
         Deal hero a hand for this node.
